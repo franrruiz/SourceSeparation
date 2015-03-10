@@ -1,6 +1,8 @@
-function simClusterSyn(T,Nd,Q,Niter,itCluster,simId)
+function simClusterSyn_AMP(Tini,Tend,Nd,Q,Niter,itCluster,simId)
 
 % addpath(genpath('/export/clusterdata/franrruiz87/ModeloMIMO/matlab'));
+addpath(genpath('sampleFunc/'));
+addpath(genpath('auxFunc/'));
 
 randn('seed',round(sum(1e5*clock)+itCluster));
 rand('seed',round(sum(1e5*clock)+itCluster));
@@ -8,20 +10,21 @@ rand('seed',round(sum(1e5*clock)+itCluster));
 % saveFolder = ['/export/clusterdata/franrruiz87/ModeloMIMO/results/synthetic/' num2str(simId) '/T' num2str(T) '_Nt' num2str(Nt) '_Nr' num2str(Nr) '_M' num2str(M) '_Ltrue' num2str(Ltrue) '_L' num2str(L) '_SNR' num2str(SNR) '_lHead' num2str(lHead), '_onOff' num2str(onOffModel)];
 % saveFile = [saveFolder '/itCluster' num2str(itCluster)];
 
-if(~isdir(saveFolder))
-    mkdir(saveFolder);
-end
-if(~isdir(saveFile))
-    mkdir(saveFile);
-end
-
-if(exist([saveFile '.mat'],'file'))
-    return;
-end
+% if(~isdir(saveFolder))
+%     mkdir(saveFolder);
+% end
+% if(~isdir(saveFile))
+%     mkdir(saveFile);
+% end
+% 
+% if(exist([saveFile '.mat'],'file'))
+%     return;
+% end
 
 %% Configuration parameters
-param.Nd = Nd;                        % Number of receivers
-param.T  = T;                         % Length of the sequence
+param.Nd = Nd;                        % Number of devices
+param.D = 1;                        %Dimensionality of the observations
+param.T  = Tend-Tini;                         % Length of the sequence
 param.Q = Q;
 param.flag0 = 1;    % Consider symbol 0 as part of the constellation (if false, transmitters are always active)
 param.Niter = Niter;  % Number of iterations of the sampler
@@ -36,7 +39,7 @@ else
 end
 
 %% Load data
-BASEDIR1=['AMPds/resultsPGAS/M' num2str(param.Nd) '_T' num2str(Tini) '_' num2str(Tend)];
+BASEDIR1=['AMPs/resultsPGAS/M' num2str(param.Nd) '_T' num2str(Tini) '_' num2str(Tend)];
 if(~isdir(BASEDIR1))
     mkdir(BASEDIR1);
 end
@@ -44,8 +47,8 @@ BASEDIR2=[BASEDIR1 '/itCluster' num2str(itCluster)];
 if(~isdir(BASEDIR2))
     mkdir(BASEDIR2);
 end
-load('AMPds_data.mat','devices');
-devices = devices(idxDevOrder(1:M_desired),Tini:Tend)/100;
+load('AMPs/data/AMPds_data.mat','devices');
+devices = devices(idxDevOrder(1:Nd),Tini:Tend)/100;
 data = sum(devices,1);
 
 %% Configuration parameters for BCJR, PGAS, EP, FFBS and collapsed Gibbs
@@ -115,12 +118,13 @@ it = param.saveCycle;
 
 %% Initialization
 if(~flagRecovered)
-    init.P = zeros(param.Nr,param.bnp.Mini,param.L);
-    if(~param.infer.sampleNoiseVar)
-        init.s2y = noiseVar;      % INITIALIZE s2y TO THE GROUND TRUTH
-    else
-        init.s2y = 20*rand(1);    % INITIALIZE s2y TO SOME LARGE VALUE
-    end
+    init.P = hyper.muP+sqrt(hyper.s2P)*randn(param.bnp.Mini*param.Q,param.D);
+    init.ptrans = dirichletrnd(hyper.gamma*ones(1,param.Q), param.Q+1);
+%     if(~param.infer.sampleNoiseVar)
+%         init.s2y = noiseVar;      % INITIALIZE s2y TO THE GROUND TRUTH
+%     else
+%         init.s2y = 20*rand(1);    % INITIALIZE s2y TO SOME LARGE VALUE
+%     end
     %init.s2H = hyper.s2h*exp(-hyper.lambda*(0:param.L-1));  % INITIALIZE s2H TO ITS MEAN VALUE
     init.am = 0.95*ones(param.bnp.Mini,1);
     init.bm = 0.05*ones(param.bnp.Mini,1);
@@ -134,13 +138,13 @@ end
 
 %% Inference
 if(~flagRecovered)
-    ADER = zeros(1,param.Niter+1);
-    SER_ALL = zeros(1,param.Niter+1);
-    SER_ACT = zeros(1,param.Niter+1);
-    MMSE = zeros(1,param.Niter+1);
-    LLH = zeros(1,param.Niter+1);
-    M_EST = zeros(1,param.Niter+1);
-    samplesAll = cell(1,param.storeIters);
+%     ADER = zeros(1,param.Niter+1);
+%     SER_ALL = zeros(1,param.Niter+1);
+%     SER_ACT = zeros(1,param.Niter+1);
+%     MMSE = zeros(1,param.Niter+1);
+%     LLH = zeros(1,param.Niter+1);
+%     M_EST = zeros(1,param.Niter+1);
+%     samplesAll = cell(1,param.storeIters);
 end
 for it=itInit+1:param.Niter
     %% Algorithm

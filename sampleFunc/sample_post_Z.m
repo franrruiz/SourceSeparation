@@ -4,7 +4,7 @@ function [Sest SeqEst nest out] = sample_post_Z(data,samples,hyper,param)
 
 % For PGAS
 if(strcmp(param.infer.symbolMethod,'pgas'))
-    [Sest SeqEst] = pgas_main(data,samples,hyper,param);
+    [Sest SeqEst] = pgas_main_matlab(data,samples,hyper,param);
     % Update the number of transitions, nest
     nest = zeros(2,2,size(Sest,1));
     for m=1:size(Sest,1)

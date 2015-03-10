@@ -1,12 +1,12 @@
 function samples = sample_newsticks(data,samples,hyper,param)
 
-if(~param.infer.sampleChannel)
-    return;
-end
+% if(~param.infer.sampleChannel)
+%     return;
+% end
 
 %% (1) Sample the sticks
 flagEmpty = 0;
-if((size(samples.Z,1)==1)&&(sum(sum(samples.seq))==0))
+if((size(samples.Z,1)==1))%&&(sum(sum(samples.seq))==0))
     c = 1;
     flagEmpty = 1;
 else
@@ -67,22 +67,10 @@ end
 
 %% (3) Sample new channel coefficients H from prior
 % First, detect wheter the constellation is complex-valued
-flagComplex = 1;
-if(sum(abs(imag(param.constellation)))<1e-5*sum(abs(real(param.constellation))))
-    flagComplex = 0;
-end
-Hnew = zeros(param.Nr,Mnew,param.L);
-for ll=1:param.L
-    Hnew(:,:,ll) = sqrt(samples.s2H(ll))*(randn(param.Nr,Mnew,1)+1i*randn(param.Nr,Mnew,1));
-end
-samples.H = cat(2,samples.H,Hnew);
-if(flagEmpty)
-    samples.H(:,1,:) = [];
-end
-if(~flagComplex)
-    samples.H = real(samples.H);
-end
-
+flagComplex = 0;
+Pnew = hyper.muP+sqrt(hyper.s2P)*randn(Mnew*param.Q,param.D)
+samples.P = [samples.P; Pnew];%cat(2,samples.H,Hnew);
+ 
 %% (4) Extend the representation of the symbol matrix Z and update nest
 samples.Z = [samples.Z; zeros(Mnew,param.T)];
 samples.seq = [samples.seq; zeros(Mnew,param.T)];
