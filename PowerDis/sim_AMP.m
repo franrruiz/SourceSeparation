@@ -1,10 +1,15 @@
-function simClusterSyn_AMP(noiseVar,Tini,Tend,Nd,Q,Niter,Last_it)
+function sim_AMP(noiseVar,Tini,Tend,Nd,Q,Niter,LastIt)
 
 addpath(genpath('sampleFunc/'));
 addpath(genpath('auxFunc/'));
 
 randn('seed',round(sum(1e5*clock)));
 rand('seed',round(sum(1e5*clock)));
+
+flagRecovered=0;
+if LastIt>0
+    flagRecovered=1;
+end
 
 %% Configuration parameters
 param.Nd = Nd;                        % Number of devices
@@ -26,7 +31,7 @@ else
 end
 
 %% Load data
-BASEDIR1=['AMPs/resultsPGAS/M' num2str(param.Nd) '_Tini' num2str(Tini) '_Tend' num2str(Tend)];
+BASEDIR1=['AMPs/resultsPGAS/M' num2str(param.Nd) '_T' num2str(Tini) '_' num2str(Tend)];
 if(~isdir(BASEDIR1))
     mkdir(BASEDIR1);
 end
@@ -72,35 +77,6 @@ hyper.gamma2 = 2;   % Parameter for bm ~ Beta(gamma1,gamma2)
 hyper.tau = 1;      % Parameter for s2y ~ IG(tau,nu)
 hyper.nu = 1;       % Parameter for s2y ~ IG(tau,nu)
 
-% %% Check if there are temporary files to be loaded
-% flagRecovered = 0;
-% itInit = 0;
-% it = param.saveCycle;
-% while(it<=param.Niter)
-%     if(exist([saveFile '/it' num2str(it) '.mat'],'file'))
-%         try
-%             % Try to load the temporary file
-%             load([saveFile '/it' num2str(it) '.mat']);
-%             % If success, then save current iteration and activate flag
-%             itInit = it;
-%             flagRecovered = 1;
-%             % Delete previous file (it-saveCycle) in order not to exceed disk quota
-%             if(exist([saveFile '/it' num2str(it-param.saveCycle) '.mat'],'file'))
-%                 delete([saveFile '/it' num2str(it-param.saveCycle) '.mat']);
-%             end
-%         catch e
-%             % If the file exists but it is corrupt
-%             % (it happens sometimes when using the cluster machines)
-%             delete([saveFile '/it' num2str(it) '.mat']);
-%             % Set it so that next iteration is it-param.saveCycle
-%             it = it-2*param.saveCycle;
-%             itInit = 0;
-%             flagRecovered = 0;
-%         end
-%     end
-%     it = it+param.saveCycle;
-% end
-
 %% Initialization
 if(~flagRecovered)
     init.P = hyper.muP+sqrt(hyper.s2P)*randn(param.Q,param.bnp.Mini);
@@ -116,10 +92,14 @@ if(~flagRecovered)
     init.slice = 0;
     init.epAcc = 0;
     samples = init;
+    samplesAll = cell(1,param.storeIters);
+else
+    load([BASEDIR1 '/it' num2str(LastIt) '.mat'],'data','init','samples','samplesAll');
+    
 end
 
 %% Inference
-for it=itInit+1:param.Niter
+for it=LastIt+1:param.Niter
     %% Algorithm
     
     % Step 1)

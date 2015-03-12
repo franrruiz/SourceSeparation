@@ -5,22 +5,21 @@
 %% DATA
 % 
 % data
-% -obs: Observations. Size = [Nr x T]
-% -channel: Channel coefficients. Size = [Nr x Nt x L]
-% -symbols: Transmitted symbols. Size = [Nt x T]
-% -seq: Transmitted indexes to symbols in the constellation. Size = [Nt x T]
+% -obs: Observations. Size = [1 x T]
+% -devices: Decices power signal. Size = [Nd x T]
 % 
 
 %% SAMPLES
 % 
 % samples
-% -H: Channel coefficients. Size = [Nr x Nt x L]
+% -P: Power values. Size = [Q x Nd]
+% -ptrans: Transition probabilities p(x_t!x_t-1). Size = [(Q+1) x Q x Nt]
 % -s2y: Noise variance.
 % -am: Transition probabilities from 0 to 0. Size = [Nt x 1]
 % -bm: Transition probabilities from active to 0. Size = [Nt x 1]
 % -s2H: Variance of the channel coefficients. Size = [1 x L]
-% -Z: Transmitted symbols. Size = [Nt x T]
-% -seq: Transmitted indexes to symbols in the constellation. Size = [Nt x T]
+% -Z: State matrix. Size = [Nt x T]
+%%%%% -seq: Transmitted indexes to symbols in the constellation. Size = [Nt x T]
 % -nest: Number of jumps from 0/1 to 0/1. Size = [2 x 2 x Nt]
 % -slice: Slice variable for the blocked sampling approach.
 % -epAcc: Number of times that the MH algorithm accepts the EP proposal (only used if param.infer.symbolMethod='ep').
@@ -28,25 +27,13 @@
 %% CONFIGURATION PARAMETERS
 % 
 % param
-% -gen: Struct with the configuration parameters to generate data.
-%   +s2n: Noise variance.
-%   +L_true: Channel length for each transmitter. Size = [1 x Nt]
-%   +varH: Variance of the channel coefficients.
-%   +Nt: Number of transmitters.
-%   +burstLength: Mean length of each burst of symbols. Size = [1 x Nt]
-%   +burstLengthStdFactor: The std of the length of each burst is (burstLength/burstLengthStdFactor). If infinite, the length is exactly burstLength.
-%   +symbol0: Symbol that is sent before (and after) transmission (typically 0).
-%   +sparsityH: % of channel coefficients that are set to 0.
-% -L: Channel length for inference.
 % -flag0: Flag to determine if symbol 0 should be considered.
-% -constellation: Vector with the constellation (must exclude 0!).
-% -Nr: Number of receiving antennas.
+% -Nd: Number of devices.
+% -D: Dimensionality of the observations.
 % -T: Length of the symbol sequence.
 % -Niter: Number of iterations of the sampler.
 % -saveCycle: Save state of the sampler every saveCycle iterations.
 % -storeIters: Number of iterations to be stored as local variables.
-% -header: Vector containing the header. It can take any length or be empty. Its elements should be strictly positive integers pointing to elements of param.constellation.
-% -onOffModel: If true (!=0), a transmitter that becomes inactive cannot start transmitting again.
 % -bcjr: Struct with configuration parameters for BCJR algorithm.
 %   +p1: Probability of transitioning from 0 to 0.
 %   +p2: Probability of transitioning from active to 0.
@@ -79,9 +66,10 @@
 %% HYPERPARAMETERS
 % 
 % hyper
-% -s2h: Define the mean value of the variance of the channel coefficients: E[s2H(r)]=s2h*exp(-lambda*(r-1)).
+% -muP: Mean for the prior on P.
+% -s2P: Variance for the prior on P.
 % -lambda: Define the mean value of the variance of the channel coefficients: E[s2H(r)]=s2h*exp(-lambda*(r-1)).
-% -kappa: Defome the variance of the variance of the channel coefficients: Std[s2H(r)]=kappa*E[s2H(r)].
+% -hyper.gamma: prior over the transition probabilities from x_t-1 to x_t follows a dirichlet with Q components and parameter gamma
 % -alpha: Concentration parameter of the IBP.
 % -gamma1: Hyperparameter for variables, bm~Beta(gamma1,gamma2).
 % -gamma2: Hyperparameter for variables, bm~Beta(gamma1,gamma2).

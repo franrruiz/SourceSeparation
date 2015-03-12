@@ -1,4 +1,4 @@
-function [X_PG] = pgas(Y,Z,Nt,C,Q,L,H,sy2,a,b,N_PF,N_PG,M)
+function [X_PG] = pgas(Y,Z,Nt,C,Q,L,H,ptrans,sy2,a,b,N_PF,N_PG,M)
 
 [Nr T] = size(Y);
 
@@ -54,7 +54,8 @@ for m = 1 : M
         if t == 1
             % At time t = 1 we sample the states from the prior at time 1.
             % We know that all transmitters were passive at time 0     [Line 1]   
-            Xt(:,:,t)   =   binornd(ones(Nt,N),1-A).*unidrnd(Q,Nt,N);
+            Xt(:,:,t)   =   binornd(ones(Nt,N),1-A).*reshape(randmult2(permute(repmat(ptrans(1,:,:),N,1,1),[2 3 1])),[Nt N]);
+        
 
             % Note that the particles do not yet have any ancestors that 
             % we can sample. However, if m > 1 the N'th particle should be the
@@ -74,8 +75,14 @@ for m = 1 : M
             % Then we propagate the selected particles from time t-1 to t, 
             % to obtain Xt(:,:,t)                                      [Line 5]
             Act         =   Xt(:,ind,t-1)>0;
+            ptrans2=zeros(Q,Nt,N);
+            for itm=1:Nt
+                %ptrans2(:,itm,:)=ptrans(1+Xt(itm,ind,t-1),:,itm);
+                ptrans2(:,itm,:)=permute(ptrans(1+Xt(itm,ind,t-1),:,itm),[2 3 1]);
+            end
+                
             Xt(:,:,t)   =   (Act.*binornd(ones(Nt,N),1-B)+...
-               (1-Act).*binornd(ones(Nt,N),1-A)).*unidrnd(Q,Nt,N);
+               (1-Act).*binornd(ones(Nt,N),1-A)).*reshape(randmult2(ptrans2),[Nt N]);
            % Note: if we wish to improve the update rate for complex scenarios
            % we should probably try to improve how we propagate particles from
            % time t-1 to t. Specifically, it seems highly inefficient to
@@ -86,6 +93,7 @@ for m = 1 : M
             if ((m ~= 1) || (flagPG))
                 % Set the N'th particle to the particle that we condition on
                 Xt(:,N,t) =   xc(:,t);                             %   [Line 6]
+
 
                 % The ancestor probabilities (the weights) are obtained by
                 % multiplying three factors. The objective here is to calculate
@@ -119,21 +127,7 @@ for m = 1 : M
 %                     Ydiff                =   Ypred - repmat(Y(:,tau),1,N);
 %                     logWY(:,tau-t+1)     =   sum(-abs(Ydiff).^2/sy2,1);
 %                 end
-%                 logWY   =   sum(logWY,2);
-                logWY = zeros(N,1);
-                if(L>1)
-                    Act_anc = zeros(N,L-1);
-                    Act_anc(:,L-1) = 1:N;
-                    r = L-2;
-                    while((r>=1)&&(t+r-L>=0))
-                         idxSurv = (Act_anc(:,r+1)>0);
-                         aux = unique(a_ind(Act_anc(idxSurv,r+1),t+r-L+1));
-                         Act_anc(1:length(aux),r) = aux;
-                         r = r-1;
-                    end
-                    logWY = acc_loop(Nt,Nr,N,T,L,t,length(C),C,Y,Xt,xc,H,a_ind,Act_anc,sy2);
-                end
-                WY      =   exp(logWY-max(logWY));
+
 
                 % Another factor represents the transition probabilities between
                 % particle i at time t-1 and the particle that we condition on at
@@ -149,13 +143,22 @@ for m = 1 : M
                 Act0    =   repmat(xc(:,t)>0,1,N);
                 % We can now go through the four cases and compute transition
                 % probabilities for each symbol and particle:
-                WZ_mat  =   (1-Act1).*(1-Act0).*A + (1-Act1).*Act0.*(1-A)/Q ...
-                    + Act1.*Act0.*(1-B)/Q +Act1.*(1-Act0).*B;
+                ptransaux=cat(2,ones(Q+1,1,Nt),ptrans);
+                ptrans2=zeros(Nt,N);
+                try
+                for itm=1:Nt
+                    ptrans2(itm,:)=ptransaux(1+Xt(itm,:,t-1),1+xc(itm,t),itm);
+                end
+                catch
+                    dips('prueba')
+                end
+                WZ_mat  =   (1-Act1).*(1-Act0).*A + (1-Act1).*Act0.*(1-A).*ptrans2 ...
+                    + Act1.*Act0.*(1-B).*ptrans2 +Act1.*(1-Act0).*B;
                 logWZ   =   sum(log(WZ_mat),1); % Log-transition probabilities for each particle
                 WZ      =   exp(logWZ-max(logWZ))';
 
                 % Finally, we can compute the weights of interest
-                w_a     =   W(:,t-1).*WY.*WZ;
+                w_a     =   W(:,t-1).*WZ;
                 w_a     =   w_a/sum(w_a);
                 if(sum(isnan(w_a)>0))
                     w_a = log(W(:,t-1))+logWY+logWZ.';
@@ -176,9 +179,9 @@ for m = 1 : M
         % Compute the importance weights for all the particles, W(:,t).
         % First we compute the expected measurements for different particles
         % by considering the particles and their histories     [Lines 3 and 10]
-        Ypred   =   zeros(Nr,N);
-        for r = 0 : min(L-1,t-1)
-             Ypred   =   Ypred   +   H(:,:,r+1)*C(X0_hist(:,:,end-r)+1);
+        Ypred   =   zeros(1,N);
+        for qq = 1 : Q
+             Ypred   =   Ypred   +   H(qq,:)*(Xt(:,:,t)==qq);
         end        
         Ydiff       =   Ypred - repmat(Y(:,t),1,N);
         logW        =   sum(-abs(Ydiff).^2/sy2,1)';
