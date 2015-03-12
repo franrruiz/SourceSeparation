@@ -31,10 +31,16 @@ BASEDIR1=['REDD/resultsPGAS/House' num2str(H) '_M' num2str(param.Nd) '_T' num2st
 if(~isdir(BASEDIR1))
     mkdir(BASEDIR1);
 end
-load(['REDD/data/datosH' num2str(H) '_2d_t30.mat'],'devices');
-devices = devices(idxDevOrder(1:Nd),Tini:Tend)/100;
-data.obs = sum(devices,1);
-data.devices = devices;
+load('REDD/data/idxDevNew.mat');
+load(['REDD/data/datosH' num2str(H) '_2d_t30.mat']);
+dev = [];
+X = zeros(1,size(devices,2));
+for i=1:Nd
+    X = X+sum(devices(idxDevNew{H,idxDevOrder(i)},:),1);
+    dev = [dev;sum(devices(idxDevNew{H,idxDevOrder(i)},:),1)];
+end
+data.obs = X(:,Tini:Tend)/100;
+data.devices = dev(:,Tini:Tend)/100;
 
 %% Configuration parameters for BCJR, PGAS, EP, FFBS and collapsed Gibbs
 param.bcjr.p1 = 0.95;
@@ -96,6 +102,7 @@ end
 
 %% Inference
 for it=LastIt+1:param.Niter
+    tic
     %% Algorithm
     
     % Step 1)
@@ -150,6 +157,7 @@ for it=LastIt+1:param.Niter
 %             delete([saveFile '/it' num2str(it-param.saveCycle) '.mat']);
 %         end
     end
+    toc
 end
 
 
