@@ -19,6 +19,5 @@ X_PG = pgas(data.obs,samples.Z,Nt,constellation,Q,param.L,samples.P, samples.ptr
 
 %% Return last obtained samples in a [Nt x T x M] matrix
 SeqEst = permute(X_PG(:,M-returnN+1:M,:),[1 3 2]);
-idxN0 = find(SeqEst~=0);
-Sest = zeros(Nt,param.T,returnN);
-Sest(idxN0) = constellation(SeqEst(idxN0)+param.flag0);
+Sest = SeqEst;
+

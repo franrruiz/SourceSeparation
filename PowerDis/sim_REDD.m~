@@ -3,8 +3,8 @@ function sim_REDD(H,noiseVar,Tini,Tend,Nd,Q,Niter,LastIt)
 addpath(genpath('sampleFunc/'));
 addpath(genpath('auxFunc/'));
 
-randn('seed',round(sum(1e5*clock)));
-rand('seed',round(sum(1e5*clock)));
+randn('seed',0);%round(sum(1e5*clock)));
+rand('seed',0);%round(sum(1e5*clock)));
 
 flagRecovered=0;
 if LastIt>0
@@ -95,8 +95,6 @@ if(~flagRecovered)
     init.epAcc = 0;
     samples = init;
     samplesAll = cell(1,param.storeIters);
-    LLH = zeros(1,param.Niter+1);
-    M_EST = zeros(1,param.Niter+1);
 else
     load([BASEDIR1 '/it' num2str(LastIt) '.mat'],'data','init','samples','samplesAll');
     
@@ -104,7 +102,7 @@ end
 
 %% Inference
 for it=LastIt+1:param.Niter
-    %tic
+    tinitic
     %% Algorithm
     
     % Step 1)
@@ -152,21 +150,16 @@ for it=LastIt+1:param.Niter
         samplesAll{it-param.Niter+param.storeIters} = samples;
     end
     
-%     %% Evaluation
-%     % Trace of the estimated number of transmitters
-     M_EST(it) = sum(sum(samples.Z~=0,2)>0);
-%     % Trace of the log-likelihood
-     LLH(it) = compute_llh(data,samples,hyper,param);
     
     %% Save temporary result file
     if(mod(it,param.saveCycle)==0)
-        save([BASEDIR1 '/it' num2str(it) '.mat'],'data','init','samples','samplesAll', 'LLH', 'M_EST');
+        save([BASEDIR1 '/it' num2str(it) '.mat'],'data','init','samples','samplesAll');
         % If successfully saved, delete previous temporary file
 %         if(exist([saveFile '/it' num2str(it-param.saveCycle) '.mat'],'file'))
 %             delete([saveFile '/it' num2str(it-param.saveCycle) '.mat']);
 %         end
     end
-    %toc
+    toc
 end
-save([BASEDIR1 '/Final.mat'],'data','init','samples','samplesAll', 'LLH', 'M_EST');
+
 

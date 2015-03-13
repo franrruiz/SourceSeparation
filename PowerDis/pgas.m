@@ -47,14 +47,16 @@ for m = 1 : M
     % produce matrices containing the am and bm coefficients
     A   =   repmat(a,1,N);
     B   =   repmat(b,1,N);
-    
+    An   =   repmat(1-a,1,N);
+    Bn   =   repmat(1-b,1,N);
+    tic
     for t = 1 : T 
         % To story away x_{t-L:t-1}^i for i = 1, 2, ..., N:
         X1_hist     =   X0_hist;
         if t == 1
             % At time t = 1 we sample the states from the prior at time 1.
             % We know that all transmitters were passive at time 0     [Line 1]   
-            Xt(:,:,t)   =   binornd(ones(Nt,N),1-A).*reshape(randmult2(permute(repmat(ptrans(1,:,:),N,1,1),[2 3 1])),[Nt N]);
+            Xt(:,:,t)   =  (rand(Nt,N)<Bn).*reshape(randmult2(permute(repmat(ptrans(1,:,:),N,1,1),[2 3 1])),[Nt N]);
         
 
             % Note that the particles do not yet have any ancestors that 
@@ -74,15 +76,18 @@ for m = 1 : M
 
             % Then we propagate the selected particles from time t-1 to t, 
             % to obtain Xt(:,:,t)                                      [Line 5]
+            %slow part
             Act         =   Xt(:,ind,t-1)>0;
             ptrans2=zeros(Q,Nt,N);
             for itm=1:Nt
-                %ptrans2(:,itm,:)=ptrans(1+Xt(itm,ind,t-1),:,itm);
                 ptrans2(:,itm,:)=permute(ptrans(1+Xt(itm,ind,t-1),:,itm),[2 3 1]);
             end
-                
-            Xt(:,:,t)   =   (Act.*binornd(ones(Nt,N),1-B)+...
-               (1-Act).*binornd(ones(Nt,N),1-A)).*reshape(randmult2(ptrans2),[Nt N]);
+%             Xt(:,:,t)   =   (Act.*binornd(ones(Nt,N),Bn)+...
+%                (1-Act).*binornd(ones(Nt,N),An)).*reshape(randmult2(ptrans2),[Nt N]);
+            aux=reshape(randmult2(ptrans2),[Nt N]);
+            Xt(:,:,t)   =   (Act.*(rand(Nt,N)<Bn)).*aux;
+            Xt(:,:,t)   =   Xt(:,:,t)+((1-Act).*(rand(Nt,N)<An)).*aux;
+           
            % Note: if we wish to improve the update rate for complex scenarios
            % we should probably try to improve how we propagate particles from
            % time t-1 to t. Specifically, it seems highly inefficient to
@@ -99,37 +104,7 @@ for m = 1 : M
                 % multiplying three factors. The objective here is to calculate
                 % these factors in order to obtain what we denote w_a. [Line 7]
 
-
-                % To compute the factor that depends on y, we currently use a 
-                % double for-loop (certainly, this can be improved upon):
-%                 logWY    =   zeros(N,L-1);
-%                 for tau     =   t : min(t+L-2,T)
-%                     % Symbols at different times contribute to the same measurement
-%                     % and r defines the delay.
-%                     % For small delays r, the receivers observe "symbols" 
-%                     % transmitted after time t, thus described by the sequence 
-%                     % that we condition on. For larger delays, the symbols 
-%                     % are instead described by particles at time t-1.
-%                     % The smallest delay for which the particle sequence in the 
-%                     % interval 1 to t-1 has an impact is when tau-r=t-1.
-%                     r1 = 0:tau-t;
-%                     r2 = tau-t+1:min(L-1,tau-1);
-%                     
-%                     if(length(r1)==1)
-%                         permV = [2 3 1];
-%                     else
-%                         permV = [1 3 2];
-%                     end
-%                     
-%                     aux   = sum(mtimesx(H(:,:,r1+1),permute(C(xc(:,tau-r1)+1),permV)),3);
-%                     Ypred = aux(:,ones(1,N)) + sum(mtimesx(H(:,:,r2+1),C(X1_hist(:,:,end+tau-r2-t+1)+1)),3);
-% 
-%                     Ydiff                =   Ypred - repmat(Y(:,tau),1,N);
-%                     logWY(:,tau-t+1)     =   sum(-abs(Ydiff).^2/sy2,1);
-%                 end
-
-
-                % Another factor represents the transition probabilities between
+                % This factor represents the transition probabilities between
                 % particle i at time t-1 and the particle that we condition on at
                 % time t. To compute these probabilities we need to distinguish
                 % between four events for each symbol and particle i:
@@ -145,15 +120,11 @@ for m = 1 : M
                 % probabilities for each symbol and particle:
                 ptransaux=cat(2,ones(Q+1,1,Nt),ptrans);
                 ptrans2=zeros(Nt,N);
-                try
                 for itm=1:Nt
                     ptrans2(itm,:)=ptransaux(1+Xt(itm,:,t-1),1+xc(itm,t),itm);
                 end
-                catch
-                    dips('prueba')
-                end
-                WZ_mat  =   (1-Act1).*(1-Act0).*A + (1-Act1).*Act0.*(1-A).*ptrans2 ...
-                    + Act1.*Act0.*(1-B).*ptrans2 +Act1.*(1-Act0).*B;
+                WZ_mat  =   (1-Act1).*(1-Act0).*A + (1-Act1).*Act0.*(An).*ptrans2 ...
+                    + Act1.*Act0.*(Bn).*ptrans2 +Act1.*(1-Act0).*B;
                 logWZ   =   sum(log(WZ_mat),1); % Log-transition probabilities for each particle
                 WZ      =   exp(logWZ-max(logWZ))';
 
@@ -173,6 +144,7 @@ for m = 1 : M
 
             % We can also store away the particles recent histories,  ~[Line 9] 
             X0_hist     =   cat(3,X1_hist(:,ind,2:end),Xt(:,:,t));
+            
         end
 
 
