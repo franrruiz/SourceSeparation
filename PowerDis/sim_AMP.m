@@ -153,7 +153,7 @@ for it=LastIt+1:param.Niter
     
     %% Save temporary result file
     if(mod(it,param.saveCycle)==0)
-        save([BASEDIR1 '/it' num2str(it) '.mat'],'data','init','samples','samplesAll');
+        save([BASEDIR1 '/it' num2str(it) '.mat'],'data','init','samples','samplesAll', 'LLH', 'M_EST');
         % If successfully saved, delete previous temporary file
 %         if(exist([saveFile '/it' num2str(it-param.saveCycle) '.mat'],'file'))
 %             delete([saveFile '/it' num2str(it-param.saveCycle) '.mat']);
