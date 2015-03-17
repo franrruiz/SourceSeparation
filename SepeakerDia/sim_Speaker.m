@@ -54,6 +54,7 @@ param.ffbs.Niter = 1;
 %% Configuration parameters for BNP and inference method
 param.infer.symbolMethod = 'pgas';
 param.infer.sampleNoiseVar = 1;
+param.infer.sampleWVar = 1;
 param.infer.sampleP = 1;
 param.infer.sampleVarP = 0;
 param.bnp.betaSlice1 = 0.5;
@@ -70,6 +71,8 @@ hyper.gamma1 = 0.1; % Parameter for bm ~ Beta(gamma1,gamma2)
 hyper.gamma2 = 2;   % Parameter for bm ~ Beta(gamma1,gamma2)
 hyper.tau = 1;      % Parameter for s2y ~ IG(tau,nu)
 hyper.nu = 1;       % Parameter for s2y ~ IG(tau,nu)
+hyper.tauW = 1;      % Parameter for s2W ~ IG(tauW,nuW)
+hyper.nuW = 1;       % Parameter for s2W ~ IG(tauW,nuW)
 
 %% Initialization
 if(~flagRecovered)
@@ -130,10 +133,10 @@ for it=LastIt+1:param.Niter
     % -Sample the mean power associated to each device
     samples.W = sample_post_W(data,samples,hyper,param);
    
-%     % -Sample the noise variance
+    % -Sample the noise variance
     samples.s2y = sample_post_s2y(data,samples,hyper,param);
-%     % -Sample the variance of the channel coefficients
-%     samples.s2W = sample_post_s2(data,samples,hyper,param);
+    % -Sample the variance of the channel coefficients
+    samples.s2W = sample_post_s2W(data,samples,hyper,param);
     
     %% Store current sample
     if(it>param.Niter-param.storeIters)
@@ -144,7 +147,7 @@ for it=LastIt+1:param.Niter
 %     % Trace of the estimated number of transmitters
      M_EST(it) = sum(sum(samples.Z~=0,2)>0);
 %     % Trace of the log-likelihood
-%      LLH(it) = compute_llh(data,samples,hyper,param);
+     LLH(it) = compute_llh(data,samples,hyper,param);
     
     %% Save temporary result file
     if(mod(it,param.saveCycle)==0)
