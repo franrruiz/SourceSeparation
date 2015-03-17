@@ -28,9 +28,13 @@ data.speakers = squeeze(speakers(1:Tsubsample:end,1,1:param.Nd));
 [param.T aux1 aux2]=size(data.speakers);
 data.W=rand(param.Nd,param.D);
 data.s2y=noiseVar;
-%for d=1:param.D
-data.obs = (data.speakers*data.W+sqrt(data.s2y)*randn(param.T,param.D))';
-%end
+data.obs = (data.speakers*data.W)';
+%Normalize
+muo=mean(data.obs');
+stdo=std(data.obs');
+data.obs=(data.obs-repmat(muo',1,param.T))./repmat(stdo',1,param.T);
+%adding noise
+data.obs =data.obs +sqrt(data.s2y)*randn(param.D,param.T)
 
 BASEDIR1=['PCCdata16kHz_isolated/resultsPGAS/S' num2str(param.Nd) '_T' num2str(param.T) '_Tsub' num2str(Tsubsample)];
 if(~isdir(BASEDIR1))
@@ -76,7 +80,8 @@ hyper.nuW = 1;       % Parameter for s2W ~ IG(tauW,nuW)
 
 %% Initialization
 if(~flagRecovered)
-    init.W = sqrt(hyper.s2W)*randn(param.bnp.Mini, param.D);
+    init.s2W=20*rand;
+    init.W = sqrt(init.s2W)*randn(param.bnp.Mini, param.D);
     init.s2y = 20*rand;      % INITIALIZE s2y TO THE GROUND TRUTH
     init.am = 0.95*ones(param.bnp.Mini,1);
     init.bm = 0.05*ones(param.bnp.Mini,1);
