@@ -114,8 +114,8 @@ for m = 1 : M
                 Act0    =   repmat(xc(:,t)~=0,1,N);
                 % We can now go through the four cases and compute transition
                 % probabilities for each symbol and particle:
-                WZ_mat  =   (1-Act1).*(1-Act0).*A + (1-Act1).*Act0.*(An).*repmat(lappdf(xc(:,t), 0, 1),1,N) ...
-                    + Act1.*Act0.*(Bn).*repmat(lappdf(xc(:,t), 0, 1),1,N) +Act1.*(1-Act0).*B;
+                WZ_mat  =   (1-Act1).*(1-Act0).*A + (1-Act1).*Act0.*(An)*lappdf(xc(:,t), 0, 1) ...
+                    + Act1.*Act0.*(Bn)*lappdf(xc(:,t), 0, 1) +Act1.*(1-Act0).*B;
                 logWZ   =   sum(log(WZ_mat),1); % Log-transition probabilities for each particle
                 WZ      =   exp(logWZ-max(logWZ))';
 
@@ -144,12 +144,13 @@ for m = 1 : M
         % by considering the particles and their histories     [Lines 3 and 10]
         Ypred   =   zeros(D,N);
         for d = 1 : D
-             Ypred(d,:)   =  H(:,d)'*Xt(:,:,t);
+             Ypred(d,:)   =   Ypred   +   H(:,d)*Xt(:,:,t);
         end        
         Ydiff       =   Ypred - repmat(Y(:,t),1,N);
         logW        =   sum(-abs(Ydiff).^2/sy2,1)';
         W(:,t)      =   exp(logW-max(logW));
         W(:,t)      =   W(:,t)/sum(W(:,t));
+W(:,t)      = 1/N;
     end % This marks the end of the for-loop over time, t.
 
 

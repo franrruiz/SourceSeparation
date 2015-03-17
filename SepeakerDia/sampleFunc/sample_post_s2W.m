@@ -1,4 +1,4 @@
-function s2H = sample_post_s2H(data,samples,hyper,param)
+function s2H = sample_post_s2W(data,samples,hyper,param)
 
 if(~param.infer.sampleVarH)
     s2H = samples.s2H;

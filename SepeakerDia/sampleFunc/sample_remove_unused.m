@@ -11,5 +11,5 @@ samples.seq(idx0,:) = [];
 samples.nest(:,:,idx0) = [];
 samples.am(idx0) = [];
 samples.bm(idx0) = [];
-samples.P(:,idx0) = [];
-samples.ptrans(:,:,idx0) = [];
+samples.W(idx0,:) = [];
+

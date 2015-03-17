@@ -27,9 +27,9 @@ load('PCCdata16kHz_isolated/data/data2.mat','speakers');
 data.speakers = squeeze(speakers(1:Tsubsample:end,1,1:param.Nd));
 [param.T aux1 aux2]=size(data.speakers);
 data.W=rand(param.Nd,param.D);
-data.s2y=noiseVar;
+data.s2y=0.3^2;
 %for d=1:param.D
-data.obs = (data.speakers*data.W+sqrt(data.s2y)*randn(param.T,param.D))';
+data.obs = (data.W'*data.speakers+sqrt(data.s2y)*randn(param.T,D))';
 %end
 
 BASEDIR1=['PCCdata16kHz_isolated/resultsPGAS/S' num2str(param.Nd) '_T' num2str(param.T) '_Tsub' num2str(Tsubsample)];
@@ -74,7 +74,7 @@ hyper.nu = 1;       % Parameter for s2y ~ IG(tau,nu)
 %% Initialization
 if(~flagRecovered)
     init.W = sqrt(hyper.s2W)*randn(param.bnp.Mini, param.D);
-    init.s2y = 20*rand;      % INITIALIZE s2y TO THE GROUND TRUTH
+    init.s2y = noiseVar;      % INITIALIZE s2y TO THE GROUND TRUTH
     init.am = 0.95*ones(param.bnp.Mini,1);
     init.bm = 0.05*ones(param.bnp.Mini,1);
     init.Z = zeros(param.bnp.Mini,param.T);
