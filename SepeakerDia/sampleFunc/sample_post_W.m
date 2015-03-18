@@ -6,7 +6,7 @@ D=param.D;
 W=zeros(Nt,D);
 ZZ=samples.Z*samples.Z';
 for d=1:D
-    PrecW=((1/samples.s2y)* ZZ+ 1/hyper.s2W*diag(ones(Nt,1)));
+    PrecW=((1/samples.s2y)* ZZ+ 1/samples.s2W*diag(ones(Nt,1)));
     MuW= PrecW\(1/samples.s2y*(samples.Z*data.obs(d,:)'));
     W(:,d) = mvnrnd2(MuW,inv(PrecW),1);
 end

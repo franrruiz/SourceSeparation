@@ -67,7 +67,7 @@ end
 
 %% (3) Sample new channel coefficients H from prior
 % First, detect wheter the constellation is complex-valued
-Wnew = sqrt(hyper.s2W)*randn(Mnew,param.D);
+Wnew = sqrt(samples.s2W)*randn(Mnew,param.D);
 samples.W = [samples.W; Wnew];
 
 if(flagEmpty)

@@ -28,11 +28,13 @@ data.speakers = squeeze(speakers(1:Tsubsample:end,1,1:param.Nd));
 [param.T aux1 aux2]=size(data.speakers);
 data.W=rand(param.Nd,param.D);
 data.s2y=noiseVar;
-data.obs = data.speakers*data.W';
+data.obs = (data.speakers*data.W)';
 %Normalize
-
+muo=mean(data.obs');
+stdo=std(data.obs');
+data.obs=(data.obs-repmat(muo',1,param.T))./repmat(stdo',1,param.T);
 %adding noise
-data.obs =data.obs +sqrt(data.s2y)*randn(param.D,param.Tmu)
+data.obs =data.obs +sqrt(data.s2y)*randn(param.D,param.T)
 
 BASEDIR1=['PCCdata16kHz_isolated/resultsPGAS/S' num2str(param.Nd) '_T' num2str(param.T) '_Tsub' num2str(Tsubsample)];
 if(~isdir(BASEDIR1))
@@ -71,16 +73,24 @@ hyper.bX = 1;      % Prior X, which is Laplace distributed(0,1)
 hyper.alpha = 1;    % Concentration parameter for Z ~ IBP(alpha)
 hyper.gamma1 = 0.1; % Parameter for bm ~ Beta(gamma1,gamma2)
 hyper.gamma2 = 2;   % Parameter for bm ~ Beta(gamma1,gamma2)
-hyper.tau = 1;      % Parameter for s2y ~ IG(tau,nu)
+hyper.tau = 2;      % Parameter for s2y ~ IG(tau,nu)
 hyper.nu = 1;       % Parameter for s2y ~ IG(tau,nu)
-hyper.tauW = 1;      % Parameter for s2W ~ IG(tauW,nuW)
+hyper.tauW = 2;      % Parameter for s2W ~ IG(tauW,nuW)
 hyper.nuW = 1;       % Parameter for s2W ~ IG(tauW,nuW)
 
 %% Initialization
 if(~flagRecovered)
-    init.s2W=20*rand;
-    init.W = sqrt(init.s2W)*randn(param.bnp.Mini, param.D);
-    init.s2y = 20*rand;      % INITIALIZE s2y TO THE GROUND TRUTH
+    if param.infer.sampleWVar
+        init.s2W=20*rand;
+    else
+        init.s2W=hyper.s2W;
+    end
+    init.W = sqrt(init.s2W)*randn(param.bnp.Mini, param.D);   
+    if param.infer.sampleNoiseVar
+        init.s2y = 20*rand;      % INITIALIZE s2y TO THE GROUND TRUTH
+    else
+        init.s2y = data.s2y;
+    end
     init.am = 0.95*ones(param.bnp.Mini,1);
     init.bm = 0.05*ones(param.bnp.Mini,1);
     init.Z = zeros(param.bnp.Mini,param.T);

@@ -56,7 +56,7 @@ for m = 1 : M
         if t == 1
             % At time t = 1 we sample the states from the prior at time 1.
             % We know that all transmitters were passive at time 0     [Line 1]   
-            Xt(:,:,t)   =  (rand(Nt,N)<Bn).*laprnd(Nt, N, 0, 1);
+            Xt(:,:,t)   =  (rand(Nt,N)<Bn).*laprnd(Nt, N, 0, sqrt(2));
         
 
             % Note that the particles do not yet have any ancestors that 
@@ -80,7 +80,7 @@ for m = 1 : M
             Act         =   Xt(:,ind,t-1)>0;
 %             Xt(:,:,t)   =   (Act.*binornd(ones(Nt,N),Bn)+...
 %                (1-Act).*binornd(ones(Nt,N),An)).*reshape(randmult2(ptrans2),[Nt N]);
-            aux=laprnd(Nt, N, 0, 1);
+            aux=laprnd(Nt, N, 0, sqrt(2));
             Xt(:,:,t)   =   (Act.*(rand(Nt,N)<Bn)).*aux;
             Xt(:,:,t)   =   Xt(:,:,t)+((1-Act).*(rand(Nt,N)<An)).*aux;
            
@@ -114,7 +114,7 @@ for m = 1 : M
                 Act0    =   repmat(xc(:,t)~=0,1,N);
                 % We can now go through the four cases and compute transition
                 % probabilities for each symbol and particle:
-                WZ_mat  =   (1-Act1).*(1-Act0).*A + (1-Act1).*Act0.*(An).*repmat(lappdf(xc(:,t), 0, 1),1,N) ...
+                WZ_mat  =   (1-Act1).*(1-Act0).*A + (1-Act1).*Act0.*(An).*repmat(lappdf(xc(:,t), 0, sqrt(2)),1,N) ...
                     + Act1.*Act0.*(Bn).*repmat(lappdf(xc(:,t), 0, 1),1,N) +Act1.*(1-Act0).*B;
                 logWZ   =   sum(log(WZ_mat),1); % Log-transition probabilities for each particle
                 WZ      =   exp(logWZ-max(logWZ))';
