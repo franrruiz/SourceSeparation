@@ -58,7 +58,7 @@ param.ffbs.Niter = 1;
 %% Configuration parameters for BNP and inference method
 param.infer.symbolMethod = 'pgas';
 param.infer.sampleNoiseVar = 1;
-param.infer.sampleWVar = 1;
+param.infer.sampleWVar = 0;
 param.infer.sampleP = 1;
 param.infer.sampleVarP = 0;
 param.bnp.betaSlice1 = 0.5;
@@ -68,7 +68,7 @@ param.bnp.Mini = 1;
 
 
 %% Hyperparameters
-hyper.s2W = 1;      % Prior Pqm, power of state q in chain m is gaussian distributed
+hyper.s2W = 2;      % Prior Pqm, power of state q in chain m is gaussian distributed
 hyper.bX = 1;      % Prior X, which is Laplace distributed(0,1)
 hyper.alpha = 1;    % Concentration parameter for Z ~ IBP(alpha)
 hyper.gamma1 = 0.1; % Parameter for bm ~ Beta(gamma1,gamma2)
