@@ -58,10 +58,8 @@ param.ffbs.Niter = 1;
 %% Configuration parameters for BNP and inference method
 param.infer.symbolMethod = 'pgas';
 param.infer.sampleNoiseVar = 1;
-param.infer.sampleWVar = 1;
-param.infer.sampleXVar = 1;
-param.infer.sampleP = 1;
-param.infer.sampleVarP = 0;
+param.infer.sampleWVar = 0;
+param.infer.sampleVarX = 1;
 param.bnp.betaSlice1 = 0.5;
 param.bnp.betaSlice2 = 5;
 param.bnp.maxMnew = 15;
@@ -78,19 +76,23 @@ hyper.tau = 2;      % Parameter for s2y ~ IG(tau,nu)
 hyper.nu = 1;       % Parameter for s2y ~ IG(tau,nu)
 hyper.tauW = 2;      % Parameter for s2W ~ IG(tauW,nuW)
 hyper.nuW = 1;       % Parameter for s2W ~ IG(tauW,nuW)
+hyper.taubX = 2;      % Parameter for bX ~ IG(taubX,nubX)
+hyper.nubX = 1;       % Parameter for bX ~ IG(taubX,nubX)
+
 
 %% Initialization
 if(~flagRecovered)
     if param.infer.sampleWVar
-        init.s2W=20*rand;
+        init.s2W=2*rand;
     else
         init.s2W=hyper.s2W;
     end
-    if param.infer.sampleXVar
+    if param.infer.sampleVarX
         init.bX=5*rand;
     else
         init.bX=hyper.bX;
     end
+    
     init.W = sqrt(init.s2W)*rand(param.bnp.Mini, param.D);   
     if param.infer.sampleNoiseVar
         init.s2y = 20*rand;      % INITIALIZE s2y TO THE GROUND TRUTH
@@ -156,6 +158,8 @@ for it=LastIt+1:param.Niter
     samples.s2y = sample_post_s2y(data,samples,hyper,param);
     % -Sample the variance of the channel coefficients
     samples.s2W = sample_post_s2W(data,samples,hyper,param);
+    % -Sample the variance of the channel coefficients
+    samples.bX = sample_post_bX(data,samples,hyper,param);
     
     %% Store current sample
     if(it>param.Niter-param.storeIters)

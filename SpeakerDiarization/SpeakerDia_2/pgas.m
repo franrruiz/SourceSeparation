@@ -11,12 +11,9 @@ else
 end
 
 X_PG    =   zeros(Nt,M,T);    %   Stores MCMC samples of trajectories
-
+s2X=2*bX^2;
 % Note that X_PG(:,m,t) is a vector that describes the transmitted symbols
 % at time t, according to the m'th sample of the sequence of symbols. 
-s2X=2*bX^2;
-
-
 
 for m = 1 : M
     if ((m == 1) && (~flagPG))
@@ -83,7 +80,7 @@ for m = 1 : M
             Act         =   Xt(:,ind,t-1)>0;
 %             Xt(:,:,t)   =   (Act.*binornd(ones(Nt,N),Bn)+...
 %                (1-Act).*binornd(ones(Nt,N),An)).*reshape(randmult2(ptrans2),[Nt N]);
-            aux=laprnd(Nt, N, 0, sqrt(s2X));
+            aux=laprnd_vec(Xt(:,ind,t-1), sqrt(s2X));
             Xt(:,:,t)   =   (Act.*(rand(Nt,N)<Bn)).*aux;
             Xt(:,:,t)   =   Xt(:,:,t)+((1-Act).*(rand(Nt,N)<An)).*aux;
            
@@ -117,8 +114,8 @@ for m = 1 : M
                 Act0    =   repmat(xc(:,t)~=0,1,N);
                 % We can now go through the four cases and compute transition
                 % probabilities for each symbol and particle:
-                WZ_mat  =   (1-Act1).*(1-Act0).*A + (1-Act1).*Act0.*(An).*repmat(lappdf(xc(:,t), 0, sqrt(s2X)),1,N) ...
-                    + Act1.*Act0.*(Bn).*repmat(lappdf(xc(:,t), 0, sqrt(s2X)),1,N) +Act1.*(1-Act0).*B;
+                WZ_mat  =   (1-Act1).*(1-Act0).*A + (1-Act1).*Act0.*(An).*lappdf(repmat(xc(:,t),1,N), Xt(:,:,t-1), sqrt(s2X)) ...
+                    + Act1.*Act0.*(Bn).*lappdf(repmat(xc(:,t),1,N), Xt(:,:,t-1), sqrt(s2X)) +Act1.*(1-Act0).*B;
                 logWZ   =   sum(log(WZ_mat),1); % Log-transition probabilities for each particle
                 WZ      =   exp(logWZ-max(logWZ))';
 
