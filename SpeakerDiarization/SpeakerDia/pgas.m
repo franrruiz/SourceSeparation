@@ -56,7 +56,7 @@ for m = 1 : M
         if t == 1
             % At time t = 1 we sample the states from the prior at time 1.
             % We know that all transmitters were passive at time 0     [Line 1]   
-            Xt(:,:,t)   =  (rand(Nt,N)<Bn).*laprnd(Nt, N, 0, sqrt(2));
+            Xt(:,:,t)   =  (rand(Nt,N)<An).*laprnd(Nt, N, 0, sqrt(2));
         
 
             % Note that the particles do not yet have any ancestors that 

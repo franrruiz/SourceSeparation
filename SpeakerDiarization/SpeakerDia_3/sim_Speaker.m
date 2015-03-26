@@ -58,7 +58,7 @@ param.ffbs.Niter = 1;
 %% Configuration parameters for BNP and inference method
 param.infer.symbolMethod = 'pgas';
 param.infer.sampleNoiseVar = 1;
-param.infer.sampleWVar = 1;
+param.infer.sampleWVar = 0;
 param.infer.sampleVarX = 0;
 param.bnp.betaSlice1 = 0.5;
 param.bnp.betaSlice2 = 5;
@@ -67,8 +67,8 @@ param.bnp.Mini = 1;
 
 
 %% Hyperparameters
-hyper.s2W = 2;      % Prior Pqm, power of state q in chain m is gaussian distributed
-hyper.bX = 1;      % Prior X, which is Laplace distributed(0,1)
+hyper.s2W = 1;      % Prior Pqm, power of state q in chain m is gaussian distributed
+hyper.bX = 4;      % Prior X, which is Gaussian(0,bX)
 hyper.alpha = 1;    % Concentration parameter for Z ~ IBP(alpha)
 hyper.gamma1 = 0.1; % Parameter for bm ~ Beta(gamma1,gamma2)
 hyper.gamma2 = 2;   % Parameter for bm ~ Beta(gamma1,gamma2)
@@ -95,7 +95,7 @@ if(~flagRecovered)
     
     init.W = sqrt(init.s2W)*rand(param.bnp.Mini, param.D);   
     if param.infer.sampleNoiseVar
-        init.s2y = 20*rand;      % INITIALIZE s2y TO THE GROUND TRUTH
+        init.s2y = rand;      % INITIALIZE s2y TO THE GROUND TRUTH
     else
         init.s2y = data.s2y;
     end
@@ -159,7 +159,7 @@ for it=LastIt+1:param.Niter
     % -Sample the variance of the channel coefficients
     samples.s2W = sample_post_s2W(data,samples,hyper,param);
     % -Sample the variance of the channel coefficients
-    samples.bX = sample_post_bX(data,samples,hyper,param);
+    samples.bX = sample_post_s2X(data,samples,hyper,param);
     
     %% Store current sample
     if(it>param.Niter-param.storeIters)

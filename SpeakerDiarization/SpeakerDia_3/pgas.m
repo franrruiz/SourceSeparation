@@ -1,6 +1,6 @@
-function [X_PG] = pgas(Y,Z,Nt,C,Q,L,H,ptrans,sy2,a,b,N_PF,N_PG,M)
+function [X_PG] = pgas(Y,Z,Nt,C,Q,L,H,sy2, s2X,a,b,N_PF,N_PG,M)
 
-[Nr T] = size(Y);
+[D T] = size(Y);
 
 flagPG = 1;
 if(isempty(Z))
@@ -11,7 +11,6 @@ else
 end
 
 X_PG    =   zeros(Nt,M,T);    %   Stores MCMC samples of trajectories
-
 % Note that X_PG(:,m,t) is a vector that describes the transmitted symbols
 % at time t, according to the m'th sample of the sequence of symbols. 
 
@@ -56,7 +55,7 @@ for m = 1 : M
         if t == 1
             % At time t = 1 we sample the states from the prior at time 1.
             % We know that all transmitters were passive at time 0     [Line 1]   
-            Xt(:,:,t)   =  (rand(Nt,N)<An).*reshape(randmult2(permute(repmat(ptrans(1,:,:),N,1,1),[2 3 1])),[Nt N]);
+            Xt(:,:,t)   =  (rand(Nt,N)<An);
         
 
             % Note that the particles do not yet have any ancestors that 
@@ -78,15 +77,8 @@ for m = 1 : M
             % to obtain Xt(:,:,t)                                      [Line 5]
             %slow part
             Act         =   Xt(:,ind,t-1)>0;
-            ptrans2=zeros(Q,Nt,N);
-            for itm=1:Nt
-                ptrans2(:,itm,:)=permute(ptrans(1+Xt(itm,ind,t-1),:,itm),[2 3 1]);
-            end
-%             Xt(:,:,t)   =   (Act.*binornd(ones(Nt,N),Bn)+...
-%                (1-Act).*binornd(ones(Nt,N),An)).*reshape(randmult2(ptrans2),[Nt N]);
-            aux=reshape(randmult2(ptrans2),[Nt N]);
-            Xt(:,:,t)   =   (Act.*(rand(Nt,N)<Bn)).*aux;
-            Xt(:,:,t)   =   Xt(:,:,t)+((1-Act).*(rand(Nt,N)<An)).*aux;
+            Xt(:,:,t)   =   (Act.*(rand(Nt,N)<Bn));
+            Xt(:,:,t)   =   Xt(:,:,t)+((1-Act).*(rand(Nt,N)<An));
            
            % Note: if we wish to improve the update rate for complex scenarios
            % we should probably try to improve how we propagate particles from
@@ -114,17 +106,12 @@ for m = 1 : M
                 % (>0) -> 0,    active becomes passive,  Prob = bm
                 WZ_mat  =   zeros(Nt,N);    % Transition probability for each element
                 X1      =   Xt(:,:,t-1);    % The particles at time t-1
-                Act1    =   X1>0;
-                Act0    =   repmat(xc(:,t)>0,1,N);
+                Act1    =   X1~=0;
+                Act0    =   repmat(xc(:,t)~=0,1,N);
                 % We can now go through the four cases and compute transition
                 % probabilities for each symbol and particle:
-                ptransaux=cat(2,ones(Q+1,1,Nt),ptrans);
-                ptrans2=zeros(Nt,N);
-                for itm=1:Nt
-                    ptrans2(itm,:)=ptransaux(1+Xt(itm,:,t-1),1+xc(itm,t),itm);
-                end
-                WZ_mat  =   (1-Act1).*(1-Act0).*A + (1-Act1).*Act0.*(An).*ptrans2 ...
-                    + Act1.*Act0.*(Bn).*ptrans2 +Act1.*(1-Act0).*B;
+                WZ_mat  =   (1-Act1).*(1-Act0).*A + (1-Act1).*Act0.*(An).*lappdf(repmat(xc(:,t),1,N), Xt(:,:,t-1), sqrt(s2X)) ...
+                    + Act1.*Act0.*(Bn) +Act1.*(1-Act0).*B;
                 logWZ   =   sum(log(WZ_mat),1); % Log-transition probabilities for each particle
                 WZ      =   exp(logWZ-max(logWZ))';
 
@@ -151,12 +138,15 @@ for m = 1 : M
         % Compute the importance weights for all the particles, W(:,t).
         % First we compute the expected measurements for different particles
         % by considering the particles and their histories     [Lines 3 and 10]
-        Ypred   =   zeros(1,N);
-        for qq = 1 : Q
-             Ypred   =   Ypred   +   H(qq,:)*(Xt(:,:,t)==qq);
+        %Ypred   =   zeros(D,N);
+        for mm = 1 : N
+             Waux   =  squeeze(H(Xt(:,mm,t)~=0,:));
+             Sy=Waux*Waux'+sy2/s2X*eye(size(Waux,1));
+             Sy= eye(D)- Waux'*(Sy\Waux);
+             logW(mm) = -1/2*log(det(Sy))+1/(2*sy2)*Y(:,t)'*Sy*Y(:,t);
         end        
-        Ydiff       =   Ypred - repmat(Y(:,t),1,N);
-        logW        =   sum(-abs(Ydiff).^2/sy2,1)';
+        %Ydiff       =   Ypred - repmat(Y(:,t),1,N);
+        %logW        =   sum(-abs(Ydiff).^2/sy2,1)';
         W(:,t)      =   exp(logW-max(logW));
         W(:,t)      =   W(:,t)/sum(W(:,t));
     end % This marks the end of the for-loop over time, t.
@@ -183,7 +173,15 @@ for m = 1 : M
     X_PG(:,m,:)     =   Xt(:,J,:);
     xc              =   reshape(Xt(:,J,:),Nt,T);
 
-    %%
+    %% Sampling X for the selected particle
+    for t=1:T
+        Waux   =  squeeze(H(X_PG(:,m,t)~=0,:));
+        if ~isempty(Waux)
+        Sx=1/sy2*Waux*Waux'+1/s2X*eye(size(Waux,1));
+        LambdaX=1/sy2*Waux*Y(:,t);
+        X_PG(X_PG(:,m,t)~=0,m,t)= mvnrnd(Sx\LambdaX,inv(Sx),1);
+        end
+    end
 end
 
 
