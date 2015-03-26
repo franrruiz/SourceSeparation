@@ -177,8 +177,8 @@ for m = 1 : M
     for t=1:T
         Waux   =  squeeze(H(X_PG(:,m,t)~=0,:));
         if ~isempty(Waux)
-        Sx=1/sy2*Waux*Waux'+1/s2X*eye(size(Waux,1));
-        LambdaX=1/sy2*Waux*Y(:,t);
+        Sx=Waux*Waux'+sy2/s2X*eye(size(Waux,1));
+        LambdaX=Waux*Y(:,t);
         X_PG(X_PG(:,m,t)~=0,m,t)= mvnrnd(Sx\LambdaX,inv(Sx),1);
         end
     end
