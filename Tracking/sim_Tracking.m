@@ -34,7 +34,7 @@ end
 load('AMPs/data/AMPds_data.mat','devices');
 data.s2y=noiseVar;
 
-[data.obs  data.states]= generate_data(param.Nd, param.d0, param.);
+[data.obs  data.states]= generate_data(param.Nd, param.d0, param.pathL,param.Ts);
 
 %% Configuration parameters for BCJR, PGAS, EP, FFBS and collapsed Gibbs
 param.bcjr.p1 = 0.95;
