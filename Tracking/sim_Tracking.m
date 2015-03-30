@@ -1,4 +1,4 @@
-function sim_Speaker(noiseVar,Tsubsample,Nd,D,Niter,LastIt)
+function sim_Tracking(noiseVar,T,Nd,Niter,LastIt)
 
 addpath(genpath('sampleFunc/'));
 addpath(genpath('auxFunc/'));
@@ -12,34 +12,30 @@ if LastIt>0
 end
 
 %% Configuration parameters
-param.D = D;
 param.Nd = Nd;                        % Number of devices
+param.D = 1;                        %Dimensionality of the observations
+param.T  = T;                         % Length of the sequence
 param.L = 1;
 param.flag0 = 1;    % Consider symbol 0 as part of the constellation (if false, transmitters are always active)
 param.Niter = Niter;  % Number of iterations of the sampler
 param.saveCycle = 200;
 param.storeIters = 2000;
-param.Q=1;
-%param.constellation=1:Q;
+%param.onOffModel = onOffModel;
+param.constellation=1:Q;
+param.d0=1;
+param.pathL= 1.8;
+param.Ts=0.3;
 
-%% Load data
-load('PCCdata16kHz_isolated/data/data2.mat','speakers');
-data.speakers = squeeze(speakers(1:Tsubsample:end,1,1:param.Nd));
-[param.T aux1 aux2]=size(data.speakers);
-data.W=rand(param.Nd,param.D);
-data.s2y=noiseVar;
-data.obs = (data.speakers*data.W)';
-%Normalize
-muo=mean(data.obs');
-stdo=std(data.obs');
-data.obs=(data.obs-repmat(muo',1,param.T))./repmat(stdo',1,param.T);
-%adding noise
-data.obs =data.obs +sqrt(data.s2y)*randn(param.D,param.T)
-
-BASEDIR1=['PCCdata16kHz_isolated/resultsPGAS/S' num2str(param.Nd) '_T' num2str(param.T) '_Tsub' num2str(Tsubsample)];
+%% Generate data
+BASEDIR1=['Tracking/resultsPGAS/M' num2str(param.Nd) '_T' num2str(T) '_s2y' num2str(noiseVar)];
 if(~isdir(BASEDIR1))
     mkdir(BASEDIR1);
 end
+load('AMPs/data/AMPds_data.mat','devices');
+data.s2y=noiseVar;
+
+[data.obs  data.states]= generate_data(param.Nd, param.d0, param.);
+
 %% Configuration parameters for BCJR, PGAS, EP, FFBS and collapsed Gibbs
 param.bcjr.p1 = 0.95;
 param.bcjr.p2 = 0.05;
@@ -57,10 +53,9 @@ param.ffbs.Niter = 1;
 
 %% Configuration parameters for BNP and inference method
 param.infer.symbolMethod = 'pgas';
-param.infer.sampleNoiseVar = 1;
-param.infer.sampleWVar = 0;
-% param.infer.sampleP = 1;
-% param.infer.sampleVarP = 0;
+param.infer.sampleNoiseVar = 0;
+param.infer.sampleP = 1;
+param.infer.sampleVarP = 0;
 param.bnp.betaSlice1 = 0.5;
 param.bnp.betaSlice2 = 5;
 param.bnp.maxMnew = 15;
@@ -68,33 +63,26 @@ param.bnp.Mini = 1;
 
 
 %% Hyperparameters
-hyper.s2W = 1;      % Prior Pqm, power of state q in chain m is gaussian distributed
-hyper.bX = 1;      % Prior X, which is Laplace distributed(0,1)
+hyper.s2P = 10;      % Prior Pqm, power of state q in chain m is gaussian distributed
+hyper.muP = 15;
+hyper.gamma = 1;    % prior over the transition probabilities from x_t-1 to x_t forllows a dirichlet with Q components and parameter gamma
+%hyper.kappa = 1;    % Std[s2H(r)]=kappa*E[s2H(r)]
 hyper.alpha = 1;    % Concentration parameter for Z ~ IBP(alpha)
 hyper.gamma1 = 0.1; % Parameter for bm ~ Beta(gamma1,gamma2)
 hyper.gamma2 = 2;   % Parameter for bm ~ Beta(gamma1,gamma2)
-hyper.tau = 2;      % Parameter for s2y ~ IG(tau,nu)
+hyper.tau = 1;      % Parameter for s2y ~ IG(tau,nu)
 hyper.nu = 1;       % Parameter for s2y ~ IG(tau,nu)
-hyper.tauW = 2;      % Parameter for s2W ~ IG(tauW,nuW)
-hyper.nuW = 1;       % Parameter for s2W ~ IG(tauW,nuW)
 
 %% Initialization
 if(~flagRecovered)
-    if param.infer.sampleWVar
-        init.s2W=20*rand;
-    else
-        init.s2W=hyper.s2W;
+    init.P = hyper.muP+sqrt(hyper.s2P)*randn(param.Q,param.bnp.Mini);
+    for mm=1:param.bnp.Mini
+        init.ptrans(:,:,mm) = dirichletrnd(hyper.gamma*ones(1,param.Q), param.Q+1);
     end
-    init.W = sqrt(init.s2W)*rand(param.bnp.Mini, param.D);   
-    if param.infer.sampleNoiseVar
-        init.s2y = 20*rand;      % INITIALIZE s2y TO THE GROUND TRUTH
-    else
-        init.s2y = data.s2y;
-    end
+    init.s2y = noiseVar;      % INITIALIZE s2y TO THE GROUND TRUTH
     init.am = 0.95*ones(param.bnp.Mini,1);
     init.bm = 0.05*ones(param.bnp.Mini,1);
     init.Z = zeros(param.bnp.Mini,param.T);
-    init.seq = zeros(param.bnp.Mini,param.T);
     init.nest = zeros(2,2,param.bnp.Mini);
     init.nest(1,1,:) = param.T;
     init.slice = 0;
@@ -102,7 +90,7 @@ if(~flagRecovered)
     samples = init;
     samplesAll = cell(1,param.storeIters);
 else
-    load([BASEDIR1 '/it' num2str(LastIt) '.mat'],'data','init','samples','samplesAll','LLH', 'M_EST');
+    load([BASEDIR1 '/it' num2str(LastIt) '.mat'],'data','init','samples','samplesAll');
     
 end
 
@@ -144,12 +132,9 @@ for it=LastIt+1:param.Niter
     
     % Step 5)
     % -Sample the mean power associated to each device
-    samples.W = sample_post_W(data,samples,hyper,param);
-   
-    % -Sample the noise variance
-    samples.s2y = sample_post_s2y(data,samples,hyper,param);
-    % -Sample the variance of the channel coefficients
-    samples.s2W = sample_post_s2W(data,samples,hyper,param);
+    samples.P = sample_post_P(data,samples,hyper,param);
+    % -Sample tptrans
+    samples.ptrans = sample_post_ptrans(data,samples,hyper,param);
     
     %% Store current sample
     if(it>param.Niter-param.storeIters)

@@ -43,8 +43,8 @@ end
 %% Configuration parameters for BCJR, PGAS, EP, FFBS and collapsed Gibbs
 param.bcjr.p1 = 0.95;
 param.bcjr.p2 = 0.05;
-param.pgas.N_PF = 3000;
-param.pgas.N_PG = 3000;
+param.pgas.N_PF = 100;
+param.pgas.N_PG = 100;
 param.pgas.Niter = 1;
 param.pgas.returnNsamples = 1;
 param.pgas.maxM = 40;
@@ -95,7 +95,7 @@ if(~flagRecovered)
     
     init.W = sqrt(init.s2W)*rand(param.bnp.Mini, param.D);   
     if param.infer.sampleNoiseVar
-        init.s2y = rand;      % INITIALIZE s2y TO THE GROUND TRUTH
+        init.s2y = 20*rand;      % INITIALIZE s2y TO THE GROUND TRUTH
     else
         init.s2y = data.s2y;
     end
