@@ -65,25 +65,12 @@ if(flagEmpty)
     samples.bm(1) = [];
 end
 
-%% (3) Sample new channel coefficients H from prior
-% First, detect wheter the constellation is complex-valued
-flagComplex = 0;
-Pnew = hyper.muP+sqrt(hyper.s2P)*randn(param.Q,Mnew);
-samples.P = [samples.P Pnew];%cat(2,samples.H,Hnew);
-for mm=1:Mnew
-    ptransNew(:,:,mm) = dirichletrnd(hyper.gamma*ones(1,param.Q), param.Q+1);
-end
-samples.ptrans=cat(3,samples.ptrans,ptransNew);
-if(flagEmpty)
-    samples.P(:,1) = [];
-    samples.ptrans (:,:,1) = [];
-end
 %% (4) Extend the representation of the symbol matrix Z and update nest
-samples.Z = [samples.Z; zeros(Mnew,param.T)];
+samples.Z = cat(1,samples.Z, zeros(Mnew,4,param.T));
 %samples.seq = [samples.seq; zeros(Mnew,param.T)];
 samples.nest = cat(3,samples.nest,zeros(2,2,Mnew));
 samples.nest(1,1,end-Mnew+1:end) = param.T;
 if(flagEmpty)
-    samples.Z(1,:) = [];
+    samples.Z(1,:,:) = [];
     samples.nest(:,:,1) = [];
 end

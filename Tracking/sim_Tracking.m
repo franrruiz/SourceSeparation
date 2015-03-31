@@ -1,4 +1,4 @@
-function sim_Tracking(noiseVar,T,Nd,Niter,LastIt)
+function sim_Tracking(noiseVar,T,Nd,Ns,Niter,LastIt)
 
 addpath(genpath('sampleFunc/'));
 addpath(genpath('auxFunc/'));
@@ -13,15 +13,14 @@ end
 
 %% Configuration parameters
 param.Nd = Nd;                        % Number of devices
-param.D = 1;                        %Dimensionality of the observations
+param.D = Ns;                        %Dimensionality of the observations = number of sensors
 param.T  = T;                         % Length of the sequence
 param.L = 1;
 param.flag0 = 1;    % Consider symbol 0 as part of the constellation (if false, transmitters are always active)
 param.Niter = Niter;  % Number of iterations of the sampler
 param.saveCycle = 200;
 param.storeIters = 2000;
-%param.onOffModel = onOffModel;
-param.constellation=1:Q;
+param.constellation=1;
 param.d0=1;
 param.pathL= 1.8;
 param.Ts=0.3;
@@ -31,10 +30,14 @@ BASEDIR1=['Tracking/resultsPGAS/M' num2str(param.Nd) '_T' num2str(T) '_s2y' num2
 if(~isdir(BASEDIR1))
     mkdir(BASEDIR1);
 end
-load('AMPs/data/AMPds_data.mat','devices');
 data.s2y=noiseVar;
+data.s2u=1;
+data.Ptx= 0.01; % Transmitted power in dB
+data.Gx=[1 0 param.Ts 0; 0 1 0 param.Ts; 0 0 1 0; 0 0 0 1];
+data.Gu= [param.Ts^2/2 0; 0 param.Ts^2/2; param.Ts 0; 0 param.Ts];
+data.W=200;
 
-[data.obs  data.states]= generate_data(param.Nd, param.d0, param.pathL,param.Ts);
+[data.obs  data.states data.sensors]= generate_data(param.T, param.Nd, param.D, param.d0, param.pathL,data.s2y,data.s2u,data.Ptx, data.W, data.Gx, data.Gu);
 
 %% Configuration parameters for BCJR, PGAS, EP, FFBS and collapsed Gibbs
 param.bcjr.p1 = 0.95;
@@ -54,8 +57,6 @@ param.ffbs.Niter = 1;
 %% Configuration parameters for BNP and inference method
 param.infer.symbolMethod = 'pgas';
 param.infer.sampleNoiseVar = 0;
-param.infer.sampleP = 1;
-param.infer.sampleVarP = 0;
 param.bnp.betaSlice1 = 0.5;
 param.bnp.betaSlice2 = 5;
 param.bnp.maxMnew = 15;
@@ -63,10 +64,6 @@ param.bnp.Mini = 1;
 
 
 %% Hyperparameters
-hyper.s2P = 10;      % Prior Pqm, power of state q in chain m is gaussian distributed
-hyper.muP = 15;
-hyper.gamma = 1;    % prior over the transition probabilities from x_t-1 to x_t forllows a dirichlet with Q components and parameter gamma
-%hyper.kappa = 1;    % Std[s2H(r)]=kappa*E[s2H(r)]
 hyper.alpha = 1;    % Concentration parameter for Z ~ IBP(alpha)
 hyper.gamma1 = 0.1; % Parameter for bm ~ Beta(gamma1,gamma2)
 hyper.gamma2 = 2;   % Parameter for bm ~ Beta(gamma1,gamma2)
@@ -75,14 +72,10 @@ hyper.nu = 1;       % Parameter for s2y ~ IG(tau,nu)
 
 %% Initialization
 if(~flagRecovered)
-    init.P = hyper.muP+sqrt(hyper.s2P)*randn(param.Q,param.bnp.Mini);
-    for mm=1:param.bnp.Mini
-        init.ptrans(:,:,mm) = dirichletrnd(hyper.gamma*ones(1,param.Q), param.Q+1);
-    end
     init.s2y = noiseVar;      % INITIALIZE s2y TO THE GROUND TRUTH
     init.am = 0.95*ones(param.bnp.Mini,1);
     init.bm = 0.05*ones(param.bnp.Mini,1);
-    init.Z = zeros(param.bnp.Mini,param.T);
+    init.Z = zeros(param.bnp.Mini,4,param.T);
     init.nest = zeros(2,2,param.bnp.Mini);
     init.nest(1,1,:) = param.T;
     init.slice = 0;
@@ -131,10 +124,9 @@ for it=LastIt+1:param.Niter
     [samples.am samples.bm]= sample_post_transitionProb(data,samples,hyper,param);
     
     % Step 5)
-    % -Sample the mean power associated to each device
-    samples.P = sample_post_P(data,samples,hyper,param);
-    % -Sample tptrans
-    samples.ptrans = sample_post_ptrans(data,samples,hyper,param);
+    % -Sample the noise variance
+    samples.s2y = sample_post_s2y(data,samples,hyper,param);
+
     
     %% Store current sample
     if(it>param.Niter-param.storeIters)

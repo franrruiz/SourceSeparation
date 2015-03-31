@@ -1,16 +1,16 @@
-function [X_PG] = pgas(Y,Z,Nt,C,Q,L,H,ptrans,sy2,a,b,N_PF,N_PG,M)
+function [X_PG] = pgas(Y,sensors, Area, Gx, Gu, Ts, s2u,Z,Nt,L,sy2,a,b,N_PF,N_PG,M)
 
 [Nr T] = size(Y);
 
 flagPG = 1;
 if(isempty(Z))
     flagPG = 0;
-    xc      =   zeros(Nt,T);      %   The particle that we condition on
+    xc      =   zeros(Nt,4,T);      %   The particle that we condition on
 else
     xc      =   Z;
 end
 
-X_PG    =   zeros(Nt,M,T);    %   Stores MCMC samples of trajectories
+X_PG    =   zeros(Nt,M,4,T);    %   Stores MCMC samples of trajectories
 
 % Note that X_PG(:,m,t) is a vector that describes the transmitted symbols
 % at time t, according to the m'th sample of the sequence of symbols. 
@@ -25,7 +25,7 @@ for m = 1 : M
         N   =   N_PG;
     end
     % We now initialize three important variables:
-    Xt      =   zeros(Nt,N,T);  %   Stores particles within PGAS
+    Xt      =   zeros(Nt,N,4,T);  %   Stores particles within PGAS
     a_ind   =   zeros(N,T);     %   Stores the ancestor indices
     W       =   zeros(N,T);     %   Stores the particle weights
     
@@ -49,6 +49,8 @@ for m = 1 : M
     B   =   repmat(b,1,N);
     An   =   repmat(1-a,1,N);
     Bn   =   repmat(1-b,1,N);
+    S2X=Gu*Gu'*s2u;
+    
     tic
     for t = 1 : T 
         % To story away x_{t-L:t-1}^i for i = 1, 2, ..., N:
@@ -56,7 +58,7 @@ for m = 1 : M
         if t == 1
             % At time t = 1 we sample the states from the prior at time 1.
             % We know that all transmitters were passive at time 0     [Line 1]   
-            Xt(:,:,t)   =  (rand(Nt,N)<An).*reshape(randmult2(permute(repmat(ptrans(1,:,:),N,1,1),[2 3 1])),[Nt N]);
+            Xt(:,:,:,t)   =  repmat(rand(Nt,N)<An,1,1,4).*cat(3,Area*rand([Nt N 2]), randn([Nt N 2]));
         
 
             % Note that the particles do not yet have any ancestors that 
@@ -78,15 +80,13 @@ for m = 1 : M
             % to obtain Xt(:,:,t)                                      [Line 5]
             %slow part
             Act         =   Xt(:,ind,t-1)>0;
-            ptrans2=zeros(Q,Nt,N);
-            for itm=1:Nt
-                ptrans2(:,itm,:)=permute(ptrans(1+Xt(itm,ind,t-1),:,itm),[2 3 1]);
+            aux=zeros(Nt,N,4);
+            for itm=1:Nt               
+                aux(itm,:,:)=(Gx*squeeze(Xt(itm,ind,:,t-1))'+ sqrt(s2u)*Gu*randn([2 N]))';                
             end
-%             Xt(:,:,t)   =   (Act.*binornd(ones(Nt,N),Bn)+...
-%                (1-Act).*binornd(ones(Nt,N),An)).*reshape(randmult2(ptrans2),[Nt N]);
-            aux=reshape(randmult2(ptrans2),[Nt N]);
-            Xt(:,:,t)   =   (Act.*(rand(Nt,N)<Bn)).*aux;
-            Xt(:,:,t)   =   Xt(:,:,t)+((1-Act).*(rand(Nt,N)<An)).*aux;
+            aux2(itm,:,:)=cat(3,Area*rand([Nt N 2]), randn([Nt N 2]));
+            Xt(:,:,:,t)   =   repmat((Act.*(rand(Nt,N)<Bn)),1,1,4).*aux;
+            Xt(:,:,:,t)   =   Xt(:,:,:,t)+repmat((1-Act).*(rand(Nt,N)<An),1,1,4).*aux2;
            
            % Note: if we wish to improve the update rate for complex scenarios
            % we should probably try to improve how we propagate particles from
@@ -113,18 +113,18 @@ for m = 1 : M
                 % (>0) -> (>0), active remains active,   Prob = (1-bm)/Q
                 % (>0) -> 0,    active becomes passive,  Prob = bm
                 WZ_mat  =   zeros(Nt,N);    % Transition probability for each element
-                X1      =   Xt(:,:,t-1);    % The particles at time t-1
-                Act1    =   X1>0;
-                Act0    =   repmat(xc(:,t)>0,1,N);
+                X1      =   Xt(:,:,:,t-1);    % The particles at time t-1
+                Act1    =   X1(:,:,1)~=0;
+                Act0    =   repmat(xc(:,1,t)>0,1,N);
                 % We can now go through the four cases and compute transition
                 % probabilities for each symbol and particle:
-                ptransaux=cat(2,ones(Q+1,1,Nt),ptrans);
-                ptrans2=zeros(Nt,N);
+                aux=zeros(Nt,N);
                 for itm=1:Nt
-                    ptrans2(itm,:)=ptransaux(1+Xt(itm,:,t-1),1+xc(itm,t),itm);
+                    Xaux=repmat(xc(itm,:,t),N,1)'-Gx*squeeze(X1(itm,:,:))';
+                    aux(itm,:)=(mvnpdf(Xaux(3,:)'/Ts,0,s2u).*mvnpdf(Xaux(4,:)'/Ts,0,s2u))';
                 end
-                WZ_mat  =   (1-Act1).*(1-Act0).*A + (1-Act1).*Act0.*(An).*ptrans2 ...
-                    + Act1.*Act0.*(Bn).*ptrans2 +Act1.*(1-Act0).*B;
+                WZ_mat  =   (1-Act1).*(1-Act0).*A + (1-Act1).*Act0.*(An).*1/Area*1/Area*mvnpdf(xc(:,3,t),zeros(Nt,1),eye(Nt)) *mvnpdf(xc(:,4,t),zeros(Nt,1),eye(Nt))...
+                    + Act1.*Act0.*(Bn).*aux +Act1.*(1-Act0).*B;
                 logWZ   =   sum(log(WZ_mat),1); % Log-transition probabilities for each particle
                 WZ      =   exp(logWZ-max(logWZ))';
 
@@ -151,14 +151,15 @@ for m = 1 : M
         % Compute the importance weights for all the particles, W(:,t).
         % First we compute the expected measurements for different particles
         % by considering the particles and their histories     [Lines 3 and 10]
-        Ypred   =   zeros(1,N);
-        for qq = 1 : Q
-             Ypred   =   Ypred   +   H(qq,:)*(Xt(:,:,t)==qq);
-        end        
-        Ydiff       =   Ypred - repmat(Y(:,t),1,N);
-        logW        =   sum(-abs(Ydiff).^2/sy2,1)';
-        W(:,t)      =   exp(logW-max(logW));
-        W(:,t)      =   W(:,t)/sum(W(:,t));
+%         Ypred   =   zeros(1,N);
+%         for qq = 1 : Q
+%              Ypred   =   Ypred   +   H(qq,:)*(Xt(:,:,t)==qq);
+%         end        
+%         Ydiff       =   Ypred - repmat(Y(:,t),1,N);
+%         logW        =   sum(-abs(Ydiff).^2/sy2,1)';
+%         W(:,t)      =   exp(logW-max(logW));
+%         W(:,t)      =   W(:,t)/sum(W(:,t));
+W(:,t) = 1/N;
     end % This marks the end of the for-loop over time, t.
 
 
@@ -166,7 +167,7 @@ for m = 1 : M
     %                                                                  [Line 9]
     ind = a_ind(:,T);
     for(t = T-1:-1:1)
-        Xt(:,:,t) = Xt(:,ind,t);
+        Xt(:,:,:,t) = Xt(:,ind,:,t);
         ind = a_ind(ind,t);
     end
     % Two comments:
@@ -180,8 +181,8 @@ for m = 1 : M
     % Finally we select one trajectory at random                      [Line 12]
     J = find(rand(1) < cumsum(W(:,T)),1);
     % that we can store away 
-    X_PG(:,m,:)     =   Xt(:,J,:);
-    xc              =   reshape(Xt(:,J,:),Nt,T);
+    X_PG(:,m,:,:)     =   Xt(:,J,:,:);
+    %xc              =   reshape(Xt(:,J,:),Nt,T);
 
     %%
 end
