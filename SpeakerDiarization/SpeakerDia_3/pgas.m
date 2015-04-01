@@ -143,7 +143,7 @@ for m = 1 : M
              Waux   =  squeeze(H(Xt(:,mm,t)~=0,:));
              Sy=Waux*Waux'+sy2/s2X*eye(size(Waux,1));
              Sy= eye(D)- Waux'*(Sy\Waux);
-             logW(mm) = -1/2*log(det(Sy))+1/(2*sy2)*Y(:,t)'*Sy*Y(:,t);
+             logW(mm) = 1/2*log(det(Sy))+1/(2*sy2)*Y(:,t)'*Sy*Y(:,t);
         end        
         %Ydiff       =   Ypred - repmat(Y(:,t),1,N);
         %logW        =   sum(-abs(Ydiff).^2/sy2,1)';
