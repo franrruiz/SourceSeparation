@@ -1,4 +1,4 @@
-function [X_PG] = pgas(Y,sensors, Area, Gx, Gu, Ts, s2u,Z,Nt,L,sy2,a,b,N_PF,N_PG,M)
+function [X_PG] = pgas(Y,sensors, Area, Gx, Gu, Ts, d0, pathL, Ptx, s2u,Z,Nt,L,sy2,a,b,N_PF,N_PG,M)
 
 [Nr T] = size(Y);
 
@@ -84,7 +84,7 @@ for m = 1 : M
             for itm=1:Nt               
                 aux(itm,:,:)=(Gx*squeeze(Xt(itm,ind,:,t-1))'+ sqrt(s2u)*Gu*randn([2 N]))';                
             end
-            aux2(itm,:,:)=cat(3,Area*rand([Nt N 2]), randn([Nt N 2]));
+            aux2=cat(3,Area*rand([Nt N 2]), randn([Nt N 2]));
             Xt(:,:,:,t)   =   repmat((Act.*(rand(Nt,N)<Bn)),1,1,4).*aux;
             Xt(:,:,:,t)   =   Xt(:,:,:,t)+repmat((1-Act).*(rand(Nt,N)<An),1,1,4).*aux2;
            
@@ -132,7 +132,7 @@ for m = 1 : M
                 w_a     =   W(:,t-1).*WZ;
                 w_a     =   w_a/sum(w_a);
                 if(sum(isnan(w_a)>0))
-                    w_a = log(W(:,t-1))+logWY+logWZ.';
+                    w_a = log(W(:,t-1))+logWZ.';
                     w_a = exp(w_a-max(w_a));
                     w_a = w_a/sum(w_a);
                 end
@@ -151,15 +151,17 @@ for m = 1 : M
         % Compute the importance weights for all the particles, W(:,t).
         % First we compute the expected measurements for different particles
         % by considering the particles and their histories     [Lines 3 and 10]
-%         Ypred   =   zeros(1,N);
-%         for qq = 1 : Q
-%              Ypred   =   Ypred   +   H(qq,:)*(Xt(:,:,t)==qq);
-%         end        
-%         Ydiff       =   Ypred - repmat(Y(:,t),1,N);
-%         logW        =   sum(-abs(Ydiff).^2/sy2,1)';
-%         W(:,t)      =   exp(logW-max(logW));
-%         W(:,t)      =   W(:,t)/sum(W(:,t));
-W(:,t) = 1/N;
+        Ptot=zeros(Nr,N);
+        for itm=1:Nt 
+         d= sqrt((repmat(sensors(:,1),1,N)-repmat(Xt(itm,:,1,t),Nr,1)).^2 +(repmat(sensors(:,2),1,N)-repmat(Xt(itm,:,2,t),Nr,1)).^2);
+         Ptot= Ptot-pathL*log10(d);
+        end  
+        Ptot=Ptot+Ptx+pathL*log(d0);
+        Ydiff       =   Ptot - repmat(Y(:,t),1,N);
+        logW        =   sum(-abs(Ydiff).^2/sy2,1)';
+        W(:,t)      =   exp(logW-max(logW));
+        W(:,t)      =   W(:,t)/sum(W(:,t));
+%W(:,t) = 1/N;
     end % This marks the end of the for-loop over time, t.
 
 

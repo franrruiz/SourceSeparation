@@ -14,4 +14,4 @@ for nt=1:Nt
     end
 end
 
-obs=squeeze(Pt+pathL*log(d0)+sum(Ptx,1))+sqrt(s2y)*randn(Ns,T);
+obs=squeeze(+sum(Ptx,1))+sqrt(s2y)*randn(Ns,T);

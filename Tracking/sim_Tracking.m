@@ -56,7 +56,7 @@ param.ffbs.Niter = 1;
 
 %% Configuration parameters for BNP and inference method
 param.infer.symbolMethod = 'pgas';
-param.infer.sampleNoiseVar = 0;
+param.infer.sampleNoiseVar = 1;
 param.bnp.betaSlice1 = 0.5;
 param.bnp.betaSlice2 = 5;
 param.bnp.maxMnew = 15;
@@ -72,7 +72,11 @@ hyper.nu = 1;       % Parameter for s2y ~ IG(tau,nu)
 
 %% Initialization
 if(~flagRecovered)
-    init.s2y = noiseVar;      % INITIALIZE s2y TO THE GROUND TRUTH
+    if param.infer.sampleNoiseVar
+        init.s2y = 20*rand;      % INITIALIZE s2y TO THE GROUND TRUTH
+    else
+        init.s2y = data.s2y;
+    end
     init.am = 0.95*ones(param.bnp.Mini,1);
     init.bm = 0.05*ones(param.bnp.Mini,1);
     init.Z = zeros(param.bnp.Mini,4,param.T);
@@ -135,9 +139,9 @@ for it=LastIt+1:param.Niter
     
 %     %% Evaluation
 %     % Trace of the estimated number of transmitters
-     M_EST(it) = sum(sum(samples.Z~=0,2)>0);
+     M_EST(it) = sum(sum(samples.Z(:,1,:)~=0,3)>0);
 %     % Trace of the log-likelihood
-     LLH(it) = compute_llh(data,samples,hyper,param);
+     LLH(it) = 0;%compute_llh(data,samples,hyper,param);
     
     %% Save temporary result file
     if(mod(it,param.saveCycle)==0)

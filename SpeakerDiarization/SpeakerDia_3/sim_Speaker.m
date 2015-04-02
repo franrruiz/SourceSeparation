@@ -57,7 +57,7 @@ param.ffbs.Niter = 1;
 
 %% Configuration parameters for BNP and inference method
 param.infer.symbolMethod = 'pgas';
-param.infer.sampleNoiseVar = 1;
+param.infer.sampleNoiseVar = 0;
 param.infer.sampleWVar = 0;
 param.infer.sampleVarX = 0;
 param.bnp.betaSlice1 = 0.5;
@@ -101,8 +101,8 @@ if(~flagRecovered)
     end
     init.am = 0.95*ones(param.bnp.Mini,1);
     init.bm = 0.05*ones(param.bnp.Mini,1);
-    init.Z = zeros(param.bnp.Mini,param.T);
-    init.seq = zeros(param.bnp.Mini,param.T);
+    init.Z = zeros(param.bnp.Mini,4,param.T);
+    init.seq = zeros(param.bnp.Mini,4,param.T);
     init.nest = zeros(2,2,param.bnp.Mini);
     init.nest(1,1,:) = param.T;
     init.slice = 0;

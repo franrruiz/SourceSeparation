@@ -7,7 +7,7 @@ if(isempty(Z))
     flagPG = 0;
     xc      =   zeros(Nt,T);      %   The particle that we condition on
 else
-    xc      =   Z;
+    xc      =   double(Z~=0);
 end
 
 X_PG    =   zeros(Nt,M,T);    %   Stores MCMC samples of trajectories
@@ -77,8 +77,7 @@ for m = 1 : M
             % to obtain Xt(:,:,t)                                      [Line 5]
             %slow part
             Act         =   Xt(:,ind,t-1)>0;
-            Xt(:,:,t)   =   (Act.*(rand(Nt,N)<Bn));
-            Xt(:,:,t)   =   Xt(:,:,t)+((1-Act).*(rand(Nt,N)<An));
+            Xt(:,:,t)   =   (Act.*(rand(Nt,N)<Bn)) +((1-Act).*(rand(Nt,N)<An)); 
            
            % Note: if we wish to improve the update rate for complex scenarios
            % we should probably try to improve how we propagate particles from
@@ -110,7 +109,7 @@ for m = 1 : M
                 Act0    =   repmat(xc(:,t)~=0,1,N);
                 % We can now go through the four cases and compute transition
                 % probabilities for each symbol and particle:
-                WZ_mat  =   (1-Act1).*(1-Act0).*A + (1-Act1).*Act0.*(An).*lappdf(repmat(xc(:,t),1,N), Xt(:,:,t-1), sqrt(s2X)) ...
+                WZ_mat  =   (1-Act1).*(1-Act0).*A + (1-Act1).*Act0.*(An) ...
                     + Act1.*Act0.*(Bn) +Act1.*(1-Act0).*B;
                 logWZ   =   sum(log(WZ_mat),1); % Log-transition probabilities for each particle
                 WZ      =   exp(logWZ-max(logWZ))';
@@ -119,7 +118,7 @@ for m = 1 : M
                 w_a     =   W(:,t-1).*WZ;
                 w_a     =   w_a/sum(w_a);
                 if(sum(isnan(w_a)>0))
-                    w_a = log(W(:,t-1))+logWY+logWZ.';
+                    w_a = log(W(:,t-1))+logWZ.';
                     w_a = exp(w_a-max(w_a));
                     w_a = w_a/sum(w_a);
                 end
@@ -143,10 +142,8 @@ for m = 1 : M
              Waux   =  squeeze(H(Xt(:,mm,t)~=0,:));
              Sy=Waux*Waux'+sy2/s2X*eye(size(Waux,1));
              Sy= eye(D)- Waux'*(Sy\Waux);
-             logW(mm) = 1/2*log(det(Sy))+1/(2*sy2)*Y(:,t)'*Sy*Y(:,t);
+             logW(mm) = 1/2*log(det(Sy))-1/(2*sy2)*Y(:,t)'*Sy*Y(:,t);
         end        
-        %Ydiff       =   Ypred - repmat(Y(:,t),1,N);
-        %logW        =   sum(-abs(Ydiff).^2/sy2,1)';
         W(:,t)      =   exp(logW-max(logW));
         W(:,t)      =   W(:,t)/sum(W(:,t));
     end % This marks the end of the for-loop over time, t.
