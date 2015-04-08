@@ -49,7 +49,6 @@ for m = 1 : M
     B   =   repmat(b,1,N);
     An   =   repmat(1-a,1,N);
     Bn   =   repmat(1-b,1,N);
-    S2X=Gu*Gu'*s2u;
     
     tic
     for t = 1 : T 
@@ -79,7 +78,7 @@ for m = 1 : M
             % Then we propagate the selected particles from time t-1 to t, 
             % to obtain Xt(:,:,t)                                      [Line 5]
             %slow part
-            Act         =   Xt(:,ind,t-1)>0;
+            Act         =   double(Xt(:,ind,1,t-1)~=0);
             aux=zeros(Nt,N,4);
             for itm=1:Nt               
                 aux(itm,:,:)=(Gx*squeeze(Xt(itm,ind,:,t-1))'+ sqrt(s2u)*Gu*randn([2 N]))';                
@@ -115,7 +114,7 @@ for m = 1 : M
                 WZ_mat  =   zeros(Nt,N);    % Transition probability for each element
                 X1      =   Xt(:,:,:,t-1);    % The particles at time t-1
                 Act1    =   X1(:,:,1)~=0;
-                Act0    =   repmat(xc(:,1,t)>0,1,N);
+                Act0    =   repmat(xc(:,1,t)~=0,1,N);
                 % We can now go through the four cases and compute transition
                 % probabilities for each symbol and particle:
                 aux=zeros(Nt,N);
@@ -137,7 +136,11 @@ for m = 1 : M
                     w_a = w_a/sum(w_a);
                 end
                 % from which we generate the N'th ancestor             [Line 8]
+                try
                 ind(N) = find(rand(1) < cumsum(w_a),1); 
+                catch
+                    dips('prueBA')
+                end
             end
             % We have now computed all the ancestor indices
             a_ind(:,t)  =   ind;        % Stores results of     [Lines 5 and 8]
@@ -152,11 +155,15 @@ for m = 1 : M
         % First we compute the expected measurements for different particles
         % by considering the particles and their histories     [Lines 3 and 10]
         Ptot=zeros(Nr,N);
+        d=zeros(Nr,N);
         for itm=1:Nt 
-         d= sqrt((repmat(sensors(:,1),1,N)-repmat(Xt(itm,:,1,t),Nr,1)).^2 +(repmat(sensors(:,2),1,N)-repmat(Xt(itm,:,2,t),Nr,1)).^2);
-         Ptot= Ptot-pathL*log10(d);
+            idxX=find(Xt(itm,:,1,t)~=0);
+            Xaux=Xt(itm,idxX,:,t);
+            RR=length(idxX);
+            d(:,idxX)= d(:,idxX)+sqrt((repmat(sensors(:,1),1,RR)-repmat(Xaux(:,:,1),Nr,1)).^2 +(repmat(sensors(:,2),1,RR)-repmat(Xaux(:,:,2),Nr,1)).^2);
         end  
-        Ptot=Ptot+Ptx+pathL*log(d0);
+        idxX=find(sum(d,1)~=0);
+        Ptot(:,idxX)= Ptx+10*pathL*log10(d0)-10*pathL*log10(d(:,idxX));
         Ydiff       =   Ptot - repmat(Y(:,t),1,N);
         logW        =   sum(-abs(Ydiff).^2/sy2,1)';
         W(:,t)      =   exp(logW-max(logW));

@@ -23,7 +23,7 @@ param.storeIters = 2000;
 param.constellation=1;
 param.d0=1;
 param.pathL= 1.8;
-param.Ts=0.3;
+param.Ts=0.01;
 
 %% Generate data
 BASEDIR1=['Tracking/resultsPGAS/M' num2str(param.Nd) '_T' num2str(T) '_s2y' num2str(noiseVar)];
@@ -56,7 +56,7 @@ param.ffbs.Niter = 1;
 
 %% Configuration parameters for BNP and inference method
 param.infer.symbolMethod = 'pgas';
-param.infer.sampleNoiseVar = 1;
+param.infer.sampleNoiseVar = 0;
 param.bnp.betaSlice1 = 0.5;
 param.bnp.betaSlice2 = 5;
 param.bnp.maxMnew = 15;
