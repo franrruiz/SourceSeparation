@@ -34,7 +34,7 @@ muo=mean(data.obs');
 stdo=std(data.obs');
 data.obs=(data.obs-repmat(muo',1,param.T))./repmat(stdo',1,param.T);
 %adding noise
-data.obs =data.obs +sqrt(data.s2y)*randn(param.D,param.T)
+data.obs =data.obs +sqrt(data.s2y)*randn(param.D,param.T);
 
 BASEDIR1=['PCCdata16kHz_isolated/resultsPGAS/S' num2str(param.Nd) '_T' num2str(param.T) '_Tsub' num2str(Tsubsample)];
 if(~isdir(BASEDIR1))
@@ -101,8 +101,8 @@ if(~flagRecovered)
     end
     init.am = 0.95*ones(param.bnp.Mini,1);
     init.bm = 0.05*ones(param.bnp.Mini,1);
-    init.Z = zeros(param.bnp.Mini,4,param.T);
-    init.seq = zeros(param.bnp.Mini,4,param.T);
+    init.Z = zeros(param.bnp.Mini,param.T);
+    init.seq = zeros(param.bnp.Mini,param.T);
     init.nest = zeros(2,2,param.bnp.Mini);
     init.nest(1,1,:) = param.T;
     init.slice = 0;
