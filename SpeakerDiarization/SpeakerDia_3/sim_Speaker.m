@@ -57,7 +57,7 @@ param.ffbs.Niter = 1;
 
 %% Configuration parameters for BNP and inference method
 param.infer.symbolMethod = 'pgas';
-param.infer.sampleNoiseVar = 0;
+param.infer.sampleNoiseVar = 1;
 param.infer.sampleWVar = 0;
 param.infer.sampleVarX = 0;
 param.bnp.betaSlice1 = 0.5;
