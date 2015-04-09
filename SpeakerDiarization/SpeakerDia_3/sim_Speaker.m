@@ -24,16 +24,16 @@ param.Q=1;
 
 %% Load data
 load('PCCdata16kHz_isolated/data/data2.mat','speakers');
-data.speakers = squeeze(speakers(1:Tsubsample:end,1,1:param.Nd));
+data.speakers = 1e2*squeeze(speakers(1:Tsubsample:end,1,1:param.Nd));
 [param.T aux1 aux2]=size(data.speakers);
 data.W=rand(param.Nd,param.D);
 data.s2y=noiseVar;
 data.obs = (data.speakers*data.W)';
-%Normalize
-muo=mean(data.obs');
-stdo=std(data.obs');
-data.obs=(data.obs-repmat(muo',1,param.T))./repmat(stdo',1,param.T);
-%adding noise
+% Normalize
+% muo=mean(data.obs');
+% stdo=std(data.obs');
+% data.obs=(data.obs-repmat(muo',1,param.T))./repmat(stdo',1,param.T);
+% adding noise
 data.obs =data.obs +sqrt(data.s2y)*randn(param.D,param.T);
 
 BASEDIR1=['PCCdata16kHz_isolated/resultsPGAS/S' num2str(param.Nd) '_T' num2str(param.T) '_Tsub' num2str(Tsubsample)];
@@ -43,12 +43,12 @@ end
 %% Configuration parameters for BCJR, PGAS, EP, FFBS and collapsed Gibbs
 param.bcjr.p1 = 0.95;
 param.bcjr.p2 = 0.05;
-param.pgas.N_PF = 100;
+param.pgas.N_PF = 3000;
 param.pgas.N_PG = 100;
 param.pgas.Niter = 1;
 param.pgas.returnNsamples = 1;
 param.pgas.maxM = 40;
-param.pgas.particles = zeros(param.pgas.maxM,max(param.pgas.N_PF,param.pgas.N_PG),param.T,'int16');
+%param.pgas.particles = zeros(param.pgas.maxM,max(param.pgas.N_PF,param.pgas.N_PG),param.T,'int16');
 param.ep.eps = 5e-7;
 param.ep.beta = 0.2;
 param.ep.Niter = 15;
@@ -68,7 +68,7 @@ param.bnp.Mini = 1;
 
 %% Hyperparameters
 hyper.s2W = 1;      % Prior Pqm, power of state q in chain m is gaussian distributed
-hyper.bX = 4;      % Prior X, which is Gaussian(0,bX)
+hyper.bX = 2;      % Prior X, which is Gaussian(0,bX)
 hyper.alpha = 1;    % Concentration parameter for Z ~ IBP(alpha)
 hyper.gamma1 = 0.1; % Parameter for bm ~ Beta(gamma1,gamma2)
 hyper.gamma2 = 2;   % Parameter for bm ~ Beta(gamma1,gamma2)
@@ -124,23 +124,9 @@ for it=LastIt+1:param.Niter
     % -Sample new sticks (and the corresponding new parameters)
     samples = sample_newsticks(data,samples,hyper,param);
     
-    % For PGAS, check that the number of current chains does not exceed maxM
-    if(strcmp(param.infer.symbolMethod,'pgas'))
-        if(size(samples.Z,1)>param.pgas.maxM)
-            param.pgas.maxM = size(samples.Z,1);
-            param.pgas.particles = zeros(param.pgas.maxM,max(param.pgas.N_PF,param.pgas.N_PG),param.T,'int16');
-        end
-    end
-    
     % Step 2)
     % -Sample the symbols Z
     [samples.Z samples.seq samples.nest out] = sample_post_Z(data,samples,hyper,param);
-    % -Compute some statistics of interest
-    if(strcmp(param.infer.symbolMethod,'pgas'))
-        
-    elseif(strcmp(param.infer.symbolMethod,'ep'))
-        samples.epAcc = samples.epAcc+out;
-    end
     
     % Step 3)
     % -Remove unused chains

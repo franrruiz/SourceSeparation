@@ -142,7 +142,7 @@ for m = 1 : M
              Waux   =  squeeze(H(Xt(:,mm,t)~=0,:));
              Sy=Waux*Waux'+sy2/s2X*eye(size(Waux,1));
              Sy= eye(D)- Waux'*(Sy\Waux);
-             logW(mm) = 1/2*log(det(Sy))-1/(2*sy2)*Y(:,t)'*Sy*Y(:,t);
+             logW(mm) = 1/2*log(det(Sy/sy2))-1/(2*sy2)*Y(:,t)'*Sy*Y(:,t);
         end        
         W(:,t)      =   exp(logW-max(logW));
         W(:,t)      =   W(:,t)/sum(W(:,t));
@@ -152,7 +152,7 @@ for m = 1 : M
     % We can now compute the generated trajectories from the ancestor indices
     %                                                                  [Line 9]
     ind = a_ind(:,T);
-    for(t = T-1:-1:1)
+    for t = T-1:-1:1
         Xt(:,:,t) = Xt(:,ind,t);
         ind = a_ind(ind,t);
     end
@@ -176,7 +176,7 @@ for m = 1 : M
         if ~isempty(Waux)
         Sx=Waux*Waux'+sy2/s2X*eye(size(Waux,1));
         LambdaX=Waux*Y(:,t);
-        X_PG(X_PG(:,m,t)~=0,m,t)= mvnrnd(Sx\LambdaX,inv(Sx),1);
+        X_PG(X_PG(:,m,t)~=0,m,t)= mvnrnd2(Sx\LambdaX,sy2*inv(Sx),1);
         end
     end
 end
