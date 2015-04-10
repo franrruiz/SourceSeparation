@@ -120,9 +120,10 @@ for m = 1 : M
                 aux=zeros(Nt,N);
                 for itm=1:Nt
                     Xaux=repmat(xc(itm,:,t),N,1)'-Gx*squeeze(X1(itm,:,:))';
-                    aux(itm,:)=(log(mvnpdf(Xaux(3,:)'/Ts,0,s2u))+ log(normpdf(Xaux(4,:)'/Ts,0,s2u)))';
+                    aux(itm,:)=(-0.5*log(2*pi*s2u)-0.5*(Xaux(3,:)/Ts).^2/s2u)+ (-0.5*log(2*pi*s2u)-0.5*(Xaux(4,:)/Ts).^2/s2u);
                 end
-                aux2=log(1/Area*1/Area)+repmat(log(normpdf(xc(:,3,t),0,1))+log(normpdf(xc(:,4,t),0,1)), 1,N);
+                aux2=log(1/Area*1/Area)+repmat((-0.5*log(2*pi*s2u)-0.5*(xc(:,3,t)).^2)+ (-0.5*log(2*pi*s2u)-0.5*(xc(:,4,t)).^2), 1,N);
+                %log(normpdf(xc(:,3,t),0,1))+log(normpdf(xc(:,4,t),0,1)), 1,N);
 %                 WZ_mat  =   (1-Act1).*(1-Act0).*log(A) + (1-Act1).*Act0.*(log(An)+log(1/Area*1/Area)+repmat(log(normpdf(xc(:,3,t),0,1))+log(normpdf(xc(:,4,t),0,1)), 1,N))...
 %                     + Act1.*Act0.*(log(Bn)+aux) +Act1.*(1-Act0).*log(B);
 
@@ -167,10 +168,10 @@ for m = 1 : M
             idxX=find(Xt(itm,:,1,t)~=0);
             Xaux=Xt(itm,idxX,:,t);
             RR=length(idxX);
-            d(:,idxX)= d(:,idxX)+sqrt((repmat(sensors(:,1),1,RR)-repmat(Xaux(:,:,1),Nr,1)).^2 +(repmat(sensors(:,2),1,RR)-repmat(Xaux(:,:,2),Nr,1)).^2);
+            d(:,idxX)= d(:,idxX)+1./((repmat(sensors(:,1),1,RR)-repmat(Xaux(:,:,1),Nr,1)).^2 +(repmat(sensors(:,2),1,RR)-repmat(Xaux(:,:,2),Nr,1)).^2).^(pathL/2);
         end  
         idxX=find(sum(d,1)~=0);
-        Ptot(:,idxX)= Ptx+10*pathL*log10(d0)-10*pathL*log10(d(:,idxX));
+        Ptot(:,idxX)=   10^(Ptx/10)*d0^pathL*d(:,idxX);
         Ydiff       =   Ptot - repmat(Y(:,t),1,N);
         logW        =   sum(-abs(Ydiff).^2/sy2,1)';
         W(:,t)      =   exp(logW-max(logW));

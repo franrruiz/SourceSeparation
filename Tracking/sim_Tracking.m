@@ -1,4 +1,4 @@
-function sim_Tracking(noiseVar,T,Nd,Ns,Niter,LastIt)
+function sim_Tracking(noiseVar,T,Nd,Niter,LastIt)
 
 addpath(genpath('sampleFunc/'));
 addpath(genpath('auxFunc/'));
@@ -13,7 +13,7 @@ end
 
 %% Configuration parameters
 param.Nd = Nd;                        % Number of devices
-param.D = Ns;                        %Dimensionality of the observations = number of sensors
+param.D = 25;                        %Dimensionality of the observations = number of sensors
 param.T  = T;                         % Length of the sequence
 param.L = 1;
 param.flag0 = 1;    % Consider symbol 0 as part of the constellation (if false, transmitters are always active)
@@ -21,29 +21,33 @@ param.Niter = Niter;  % Number of iterations of the sampler
 param.saveCycle = 200;
 param.storeIters = 2000;
 param.constellation=1;
-param.d0=1;
-param.pathL= 1.8;
-param.Ts=0.01;
 
 %% Generate data
 BASEDIR1=['Tracking/resultsPGAS/M' num2str(param.Nd) '_T' num2str(T) '_s2y' num2str(noiseVar)];
 if(~isdir(BASEDIR1))
     mkdir(BASEDIR1);
 end
-data.s2y=noiseVar;
-data.s2u=1;
-data.Ptx= 0.01; % Transmitted power in dB
+
+load (['dataTracking_Nt' num2str(Nd) '_s2y' num2str(noiseVar) '_T' num2str(T) '.mat']);
+data.s2y=s2y;
+data.s2u=s2u;
+data.Ptx= Pt; % Transmitted power in dB
+data.W=W;
+param.d0=d0;
+param.pathL= pathL;
+param.Ts=Ts;
 data.Gx=[1 0 param.Ts 0; 0 1 0 param.Ts; 0 0 1 0; 0 0 0 1];
 data.Gu= [param.Ts^2/2 0; 0 param.Ts^2/2; param.Ts 0; 0 param.Ts];
-data.W=200;
+data.obs=obs;
+data.sensors=sensors;
+data.states=state;
 
-[data.obs  data.states data.sensors]= generate_data(param.T, param.Nd, param.D, param.d0, param.pathL,data.s2y,data.s2u,data.Ptx, data.W, data.Gx, data.Gu);
 
 %% Configuration parameters for BCJR, PGAS, EP, FFBS and collapsed Gibbs
 param.bcjr.p1 = 0.95;
 param.bcjr.p2 = 0.05;
 param.pgas.N_PF = 3000;
-param.pgas.N_PG = 3000;
+param.pgas.N_PG = 300;
 param.pgas.Niter = 1;
 param.pgas.returnNsamples = 1;
 param.pgas.maxM = 40;
@@ -56,7 +60,7 @@ param.ffbs.Niter = 1;
 
 %% Configuration parameters for BNP and inference method
 param.infer.symbolMethod = 'pgas';
-param.infer.sampleNoiseVar = 0;
+param.infer.sampleNoiseVar = 1;
 param.bnp.betaSlice1 = 0.5;
 param.bnp.betaSlice2 = 5;
 param.bnp.maxMnew = 15;
@@ -128,7 +132,7 @@ for it=LastIt+1:param.Niter
 %     % Trace of the estimated number of transmitters
      M_EST(it) = sum(sum(samples.Z(:,1,:)~=0,3)>0);
 %     % Trace of the log-likelihood
-     LLH(it) = 0;%compute_llh(data,samples,hyper,param);
+     LLH(it) = compute_llh(data,samples,hyper,param);
     
     %% Save temporary result file
     if(mod(it,param.saveCycle)==0)

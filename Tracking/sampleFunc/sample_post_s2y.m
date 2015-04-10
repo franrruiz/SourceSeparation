@@ -8,16 +8,16 @@ end
 % Obtain parameters from the structs
 Nr = param.D;
 [Nt aux T] = size(samples.Z);
-L = param.L;
 
 % Build matrix S containing the symbols and their shifted replicas,
 % and matrix H containing the channel coefficients
 Ptot=zeros(Nr,T);
-for itm=1:Nt 
-    d= sqrt((repmat(data.sensors(:,1),1,T)-repmat(squeeze(samples.Z(itm,1,:))',Nr,1)).^2 +(repmat(data.sensors(:,2),1,T)-repmat(squeeze(samples.Z(itm,2,:))',Nr,1)).^2);
-    Ptot= Ptot-param.pathL*log10(d);
-end    
-Ptot=Ptot+data.Ptx+param.pathL*log(param.d0);
+for jj=1:Nr
+    d= 1./((repmat(data.sensors(jj,1),Nt,T)-reshape(samples.Z(:,1,:),[Nt,T])).^2 +(repmat(data.sensors(jj,2),Nt,T)-reshape(samples.Z(:,2,:),[Nt,T])).^2).^(param.pathL/2);
+    d(squeeze(samples.Z(:,1,:))==0)=0;
+    Ptot(jj,:)=   10^(data.Ptx/10)*param.d0^param.pathL*sum(d,1);
+end
+
 % Posterior parameters
 nuP = hyper.nu+T*Nr;
 tauP = hyper.tau+sum(sum(abs(data.obs-Ptot).^2));
