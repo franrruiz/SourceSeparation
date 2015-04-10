@@ -96,7 +96,7 @@ for m = 1 : M
             % particle is sampled differently:
             if ((m ~= 1) || (flagPG))
                 % Set the N'th particle to the particle that we condition on
-                Xt(:,N,t) =   xc(:,t);                             %   [Line 6]
+                Xt(:,N,:,t) =   xc(:,:,t);                             %   [Line 6]
 
 
                 % The ancestor probabilities (the weights) are obtained by
@@ -120,26 +120,33 @@ for m = 1 : M
                 aux=zeros(Nt,N);
                 for itm=1:Nt
                     Xaux=repmat(xc(itm,:,t),N,1)'-Gx*squeeze(X1(itm,:,:))';
-                    aux(itm,:)=(mvnpdf(Xaux(3,:)'/Ts,0,s2u).*mvnpdf(Xaux(4,:)'/Ts,0,s2u))';
+                    aux(itm,:)=(log(mvnpdf(Xaux(3,:)'/Ts,0,s2u))+ log(normpdf(Xaux(4,:)'/Ts,0,s2u)))';
                 end
-                WZ_mat  =   (1-Act1).*(1-Act0).*A + (1-Act1).*Act0.*(An).*1/Area*1/Area*mvnpdf(xc(:,3,t),zeros(Nt,1),eye(Nt)) *mvnpdf(xc(:,4,t),zeros(Nt,1),eye(Nt))...
-                    + Act1.*Act0.*(Bn).*aux +Act1.*(1-Act0).*B;
-                logWZ   =   sum(log(WZ_mat),1); % Log-transition probabilities for each particle
-                WZ      =   exp(logWZ-max(logWZ))';
+                aux2=log(1/Area*1/Area)+repmat(log(normpdf(xc(:,3,t),0,1))+log(normpdf(xc(:,4,t),0,1)), 1,N);
+%                 WZ_mat  =   (1-Act1).*(1-Act0).*log(A) + (1-Act1).*Act0.*(log(An)+log(1/Area*1/Area)+repmat(log(normpdf(xc(:,3,t),0,1))+log(normpdf(xc(:,4,t),0,1)), 1,N))...
+%                     + Act1.*Act0.*(log(Bn)+aux) +Act1.*(1-Act0).*log(B);
+
+                 WZ_mat(((1-Act1).*(1-Act0))==1)=log(A(((1-Act1).*(1-Act0))==1)); 
+                 WZ_mat(((1-Act1).*Act0)==1)=log(An(((1-Act1).*Act0)==1))+aux2(((1-Act1).*Act0)==1);
+                 WZ_mat((Act1.*Act0)==1)=log(Bn((Act1.*Act0)==1))+aux((Act1.*Act0)==1); 
+                 WZ_mat((Act1.*(1-Act0))==1)=log(B((Act1.*(1-Act0))==1));
+                %logWZ   =   sum(log(WZ_mat),1); % Log-transition probabilities for each particle
+                logWZ   =   sum((WZ_mat),1); % Log-transition probabilities for each particle
+                %WZ      =   exp(logWZ-max(logWZ))';
 
                 % Finally, we can compute the weights of interest
-                w_a     =   W(:,t-1).*WZ;
-                w_a     =   w_a/sum(w_a);
-                if(sum(isnan(w_a)>0))
+                %w_a     =   W(:,t-1).*WZ;
+                %w_a     =   w_a/sum(w_a);
+                %if(sum(isnan(w_a)>0))
                     w_a = log(W(:,t-1))+logWZ.';
                     w_a = exp(w_a-max(w_a));
                     w_a = w_a/sum(w_a);
-                end
+                %end
                 % from which we generate the N'th ancestor             [Line 8]
                 try
                 ind(N) = find(rand(1) < cumsum(w_a),1); 
                 catch
-                    dips('prueBA')
+                    disp('prueBA')
                 end
             end
             % We have now computed all the ancestor indices

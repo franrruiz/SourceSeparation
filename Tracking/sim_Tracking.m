@@ -47,7 +47,7 @@ param.pgas.N_PG = 3000;
 param.pgas.Niter = 1;
 param.pgas.returnNsamples = 1;
 param.pgas.maxM = 40;
-param.pgas.particles = zeros(param.pgas.maxM,max(param.pgas.N_PF,param.pgas.N_PG),param.T,'int16');
+%param.pgas.particles = zeros(param.pgas.maxM,max(param.pgas.N_PF,param.pgas.N_PG),param.T,'int16');
 param.ep.eps = 5e-7;
 param.ep.beta = 0.2;
 param.ep.Niter = 15;
@@ -101,14 +101,6 @@ for it=LastIt+1:param.Niter
     % -Sample new sticks (and the corresponding new parameters)
     samples = sample_newsticks(data,samples,hyper,param);
     
-    % For PGAS, check that the number of current chains does not exceed maxM
-    if(strcmp(param.infer.symbolMethod,'pgas'))
-        if(size(samples.Z,1)>param.pgas.maxM)
-            param.pgas.maxM = size(samples.Z,1);
-            param.pgas.particles = zeros(param.pgas.maxM,max(param.pgas.N_PF,param.pgas.N_PG),param.T,'int16');
-        end
-    end
-    
     % Step 2)
     % -Sample the symbols Z
     [samples.Z samples.seq samples.nest out] = sample_post_Z(data,samples,hyper,param);
@@ -132,12 +124,7 @@ for it=LastIt+1:param.Niter
     samples.s2y = sample_post_s2y(data,samples,hyper,param);
 
     
-    %% Store current sample
-    if(it>param.Niter-param.storeIters)
-        samplesAll{it-param.Niter+param.storeIters} = samples;
-    end
-    
-%     %% Evaluation
+    %% Evaluation
 %     % Trace of the estimated number of transmitters
      M_EST(it) = sum(sum(samples.Z(:,1,:)~=0,3)>0);
 %     % Trace of the log-likelihood
