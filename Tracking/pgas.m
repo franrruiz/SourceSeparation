@@ -122,22 +122,14 @@ for m = 1 : M
                     Xaux=repmat(xc(itm,:,t),N,1)'-Gx*squeeze(X1(itm,:,:))';
                     aux(itm,:)=(-0.5*log(2*pi*s2u)-0.5*(Xaux(3,:)/Ts).^2/s2u)+ (-0.5*log(2*pi*s2u)-0.5*(Xaux(4,:)/Ts).^2/s2u);
                 end
-                aux2=log(1/Area*1/Area)+repmat((-0.5*log(2*pi*s2u)-0.5*(xc(:,3,t)).^2)+ (-0.5*log(2*pi*s2u)-0.5*(xc(:,4,t)).^2), 1,N);
-                %log(normpdf(xc(:,3,t),0,1))+log(normpdf(xc(:,4,t),0,1)), 1,N);
-%                 WZ_mat  =   (1-Act1).*(1-Act0).*log(A) + (1-Act1).*Act0.*(log(An)+log(1/Area*1/Area)+repmat(log(normpdf(xc(:,3,t),0,1))+log(normpdf(xc(:,4,t),0,1)), 1,N))...
-%                     + Act1.*Act0.*(log(Bn)+aux) +Act1.*(1-Act0).*log(B);
-
-                 WZ_mat(((1-Act1).*(1-Act0))==1)=log(A(((1-Act1).*(1-Act0))==1)); 
-                 WZ_mat(((1-Act1).*Act0)==1)=log(An(((1-Act1).*Act0)==1))+aux2(((1-Act1).*Act0)==1);
-                 WZ_mat((Act1.*Act0)==1)=log(Bn((Act1.*Act0)==1))+aux((Act1.*Act0)==1); 
-                 WZ_mat((Act1.*(1-Act0))==1)=log(B((Act1.*(1-Act0))==1));
-                %logWZ   =   sum(log(WZ_mat),1); % Log-transition probabilities for each particle
+                aux2=log(1/Area*1/Area)+repmat((-0.5*log(2*pi)-0.5*(xc(:,3,t)).^2)+ (-0.5*log(2*pi)-0.5*(xc(:,4,t)).^2), 1,N);
+                WZ_mat(((1-Act1).*(1-Act0))==1)=log(A(((1-Act1).*(1-Act0))==1)); 
+                WZ_mat(((1-Act1).*Act0)==1)=log(An(((1-Act1).*Act0)==1))+aux2(((1-Act1).*Act0)==1);
+                WZ_mat((Act1.*Act0)==1)=log(Bn((Act1.*Act0)==1))+aux((Act1.*Act0)==1); 
+                WZ_mat((Act1.*(1-Act0))==1)=log(B((Act1.*(1-Act0))==1));
                 logWZ   =   sum((WZ_mat),1); % Log-transition probabilities for each particle
-                %WZ      =   exp(logWZ-max(logWZ))';
 
                 % Finally, we can compute the weights of interest
-                %w_a     =   W(:,t-1).*WZ;
-                %w_a     =   w_a/sum(w_a);
                 %if(sum(isnan(w_a)>0))
                     w_a = log(W(:,t-1))+logWZ.';
                     w_a = exp(w_a-max(w_a));
