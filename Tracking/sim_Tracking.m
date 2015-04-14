@@ -23,7 +23,7 @@ param.storeIters = 2000;
 param.constellation=1;
 
 %% Generate data
-BASEDIR1=['Tracking/resultsPGAS/M' num2str(param.Nd) '_T' num2str(T) '_s2y' num2str(noiseVar)];
+BASEDIR1=['resultsPGAS/M' num2str(param.Nd) '_T' num2str(T) '_s2y' num2str(noiseVar)];
 if(~isdir(BASEDIR1))
     mkdir(BASEDIR1);
 end
