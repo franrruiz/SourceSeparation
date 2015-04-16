@@ -47,7 +47,7 @@ data.states=state;
 param.bcjr.p1 = 0.95;
 param.bcjr.p2 = 0.05;
 param.pgas.N_PF = 3000;
-param.pgas.N_PG = 3000;
+param.pgas.N_PG = 100;
 param.pgas.Niter = 1;
 param.pgas.returnNsamples = 1;
 param.pgas.maxM = 40;
@@ -77,7 +77,7 @@ hyper.nu = 1;       % Parameter for s2y ~ IG(tau,nu)
 %% Initialization
 if(~flagRecovered)
     if param.infer.sampleNoiseVar
-        init.s2y = 20*rand;      % INITIALIZE s2y TO THE GROUND TRUTH
+        init.s2y = 100*rand;      % INITIALIZE s2y TO THE GROUND TRUTH
     else
         init.s2y = data.s2y;
     end

@@ -29,10 +29,6 @@ for m = 1 : M
     a_ind   =   zeros(N,T);     %   Stores the ancestor indices
     W       =   zeros(N,T);     %   Stores the particle weights
     
-    % In our first version we also store the last L elements 
-    % in the particle trajectories. 
-    X0_hist =   zeros(Nt,N,L); % Contains x_{t-L+1:t}^i, i=1,...,N
-    X1_hist =   zeros(Nt,N,L); % Contains x_{t-L:t-1}^i, i=1,...,N
     
     % NOTE 1: Xt also contains particles but to find out how these are
     % connected across time we need to consider the ancestor indices a_ind.
@@ -53,7 +49,6 @@ for m = 1 : M
     tic
     for t = 1 : T 
         % To story away x_{t-L:t-1}^i for i = 1, 2, ..., N:
-        X1_hist     =   X0_hist;
         if t == 1
             % At time t = 1 we sample the states from the prior at time 1.
             % We know that all transmitters were passive at time 0     [Line 1]   
@@ -66,9 +61,6 @@ for m = 1 : M
             if ((m ~= 1) || (flagPG))
                 Xt(:,N,:,t) = xc(:,:,t);
             end
-
-            % For convenience, we store the particle trajectories here:
-            X0_hist      =   cat(3,zeros(Nt,N,L-1),Xt(:,:,t));
 
         else
             % At later times we first sample the ancestors, using multinomial 
@@ -136,17 +128,10 @@ for m = 1 : M
                     w_a = w_a/sum(w_a);
                 %end
                 % from which we generate the N'th ancestor             [Line 8]
-                try
                 ind(N) = find(rand(1) < cumsum(w_a),1); 
-                catch
-                    disp('prueBA')
-                end
             end
             % We have now computed all the ancestor indices
             a_ind(:,t)  =   ind;        % Stores results of     [Lines 5 and 8]
-
-            % We can also store away the particles recent histories,  ~[Line 9] 
-            X0_hist     =   cat(3,X1_hist(:,ind,2:end),Xt(:,:,t));
             
         end
 
