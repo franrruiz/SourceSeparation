@@ -95,6 +95,21 @@ else
     
 end
 
+% samples.Z=data.states;
+% samples.s2y=noiseVar;
+% nest = zeros(2,2,size(samples.Z,1));
+% for m=1:size(samples.Z,1)
+%     % From 0 to 0
+%     samples.nest(1,1,m) = sum([0 squeeze(samples.Z(m,1,1:end-1))']==0 & squeeze(samples.Z(m,1,:))'==0);
+%     % From 0 to active
+%     samples.nest(1,2,m) = sum([0 squeeze(samples.Z(m,1,1:end-1))']==0 & squeeze(samples.Z(m,1,:))'~=0);
+%     % From active to 0
+%     samples.nest(2,1,m) = sum([0 squeeze(samples.Z(m,1,1:end-1))']~=0 & squeeze(samples.Z(m,1,:))'==0);
+%     % From active to active
+%     samples.nest(2,2,m) = sum([0 squeeze(samples.Z(m,1,1:end-1))']~=0 & squeeze(samples.Z(m,1,:))'~=0);
+% end
+% [samples.am samples.bm]= sample_post_transitionProb(data,samples,hyper,param);
+
 %% Inference
 for it=LastIt+1:param.Niter
     %% Algorithm

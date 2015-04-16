@@ -64,7 +64,7 @@ for m = 1 : M
             % we can sample. However, if m > 1 the N'th particle should be the
             % particle that we condition on                            [Line 2]
             if ((m ~= 1) || (flagPG))
-                Xt(:,N,t) = xc(:,t);
+                Xt(:,N,:,t) = xc(:,:,t);
             end
 
             % For convenience, we store the particle trajectories here:
