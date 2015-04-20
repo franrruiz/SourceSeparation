@@ -23,7 +23,7 @@ param.Q=1;
 %param.constellation=1:Q;
 
 %% Load data
-load('PCCdata16kHz_isolated/data/data2.mat','speakers');
+load('PCCdata16kHz_isolated/data/data3.mat','speakers');
 data.speakers = 1e2*squeeze(speakers(1:Tsubsample:end,1,1:param.Nd));
 [param.T aux1 aux2]=size(data.speakers);
 data.W=rand(param.Nd,param.D);
