@@ -9,13 +9,13 @@ if(strcmp(param.infer.symbolMethod,'pgas'))
     nest = zeros(2,2,size(Sest,1));
     for m=1:size(Sest,1)
         % From 0 to 0
-        nest(1,1,m) = sum([0 SeqEst(m,1:end-1)]==0 & SeqEst(m,:)==0);
+        nest(1,1,m) = sum([0 squeeze(SeqEst(m,1,1:end-1))']==0 & squeeze(SeqEst(m,1,:))'==0);
         % From 0 to active
-        nest(1,2,m) = sum([0 SeqEst(m,1:end-1)]==0 & SeqEst(m,:)~=0);
+        nest(1,2,m) = sum([0 squeeze(SeqEst(m,1,1:end-1))']==0 & squeeze(SeqEst(m,1,:))'~=0);
         % From active to 0
-        nest(2,1,m) = sum([0 SeqEst(m,1:end-1)]~=0 & SeqEst(m,:)==0);
+        nest(2,1,m) = sum([0 squeeze(SeqEst(m,1,1:end-1))']~=0 & squeeze(SeqEst(m,1,:))'==0);
         % From active to active
-        nest(2,2,m) = sum([0 SeqEst(m,1:end-1)]~=0 & SeqEst(m,:)~=0);
+        nest(2,2,m) = sum([0 squeeze(SeqEst(m,1,1:end-1))']~=0 & squeeze(SeqEst(m,1,:))'~=0);
     end
     out = 0;
     

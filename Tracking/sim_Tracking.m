@@ -47,7 +47,7 @@ data.states=state;
 param.bcjr.p1 = 0.95;
 param.bcjr.p2 = 0.05;
 param.pgas.N_PF = 3000;
-param.pgas.N_PG = 100;
+param.pgas.N_PG = 3000;
 param.pgas.Niter = 1;
 param.pgas.returnNsamples = 1;
 param.pgas.maxM = 40;
@@ -94,21 +94,6 @@ else
     load([BASEDIR1 '/it' num2str(LastIt) '.mat'],'data','init','samples','samplesAll');
     
 end
-
-% samples.Z=data.states;
-% samples.s2y=noiseVar;
-% nest = zeros(2,2,size(samples.Z,1));
-% for m=1:size(samples.Z,1)
-%     % From 0 to 0
-%     samples.nest(1,1,m) = sum([0 squeeze(samples.Z(m,1,1:end-1))']==0 & squeeze(samples.Z(m,1,:))'==0);
-%     % From 0 to active
-%     samples.nest(1,2,m) = sum([0 squeeze(samples.Z(m,1,1:end-1))']==0 & squeeze(samples.Z(m,1,:))'~=0);
-%     % From active to 0
-%     samples.nest(2,1,m) = sum([0 squeeze(samples.Z(m,1,1:end-1))']~=0 & squeeze(samples.Z(m,1,:))'==0);
-%     % From active to active
-%     samples.nest(2,2,m) = sum([0 squeeze(samples.Z(m,1,1:end-1))']~=0 & squeeze(samples.Z(m,1,:))'~=0);
-% end
-% [samples.am samples.bm]= sample_post_transitionProb(data,samples,hyper,param);
 
 %% Inference
 for it=LastIt+1:param.Niter
@@ -160,4 +145,18 @@ for it=LastIt+1:param.Niter
 end
 save([BASEDIR1 '/Final.mat'],'data','init','samples','samplesAll', 'LLH', 'M_EST');
 
-
+%% Initialize in the ground truth
+% samples.Z=data.states;
+% samples.s2y=noiseVar;
+% nest = zeros(2,2,size(samples.Z,1));
+% for m=1:size(samples.Z,1)
+%     % From 0 to 0
+%     samples.nest(1,1,m) = sum([0 squeeze(samples.Z(m,1,1:end-1))']==0 & squeeze(samples.Z(m,1,:))'==0);
+%     % From 0 to active
+%     samples.nest(1,2,m) = sum([0 squeeze(samples.Z(m,1,1:end-1))']==0 & squeeze(samples.Z(m,1,:))'~=0);
+%     % From active to 0
+%     samples.nest(2,1,m) = sum([0 squeeze(samples.Z(m,1,1:end-1))']~=0 & squeeze(samples.Z(m,1,:))'==0);
+%     % From active to active
+%     samples.nest(2,2,m) = sum([0 squeeze(samples.Z(m,1,1:end-1))']~=0 & squeeze(samples.Z(m,1,:))'~=0);
+% end
+% [samples.am samples.bm]= sample_post_transitionProb(data,samples,hyper,param);
