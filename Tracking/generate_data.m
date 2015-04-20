@@ -15,9 +15,9 @@ sensors=[a(: ) b(:)];
 
 state=zeros(Nt,4,T);
 for nt=1:Nt
-    Tini = 1;%randi([1 round(T/2)],1,1);
-    Tend = T; %min(Tini+round(T/2)-1,T);
-    state (nt,:,Tini)= [W/8+6*W/8*rand(2,1); randn(2,1)];
+    Tini = randi([1 round(T/2)],1,1);
+    Tend = min(Tini+round(T/2)-1,T);
+    state (nt,:,Tini)= [W*rand(2,1); randn(2,1)];
     for t=Tini+1:Tend
        state (nt,:,t)=Gx*squeeze(state (nt,:,t-1))'+sqrt(s2u)*Gu*randn(2,1);
     end
