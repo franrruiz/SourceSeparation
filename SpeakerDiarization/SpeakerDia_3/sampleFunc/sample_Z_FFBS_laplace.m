@@ -17,7 +17,7 @@ bw = zeros(Q,T);
 for it=1:param.ffbs.Niter
     for m=1:Mest
         % Remove the contribution of all transmitters but the m-th one
-        suma = zeros(param.Nr,T);
+        suma = zeros(param.D,T);
         Zq = Sest([1:m-1 m+1:end],:);
         suma = suma+W([1:m-1 m+1:end],:)'*Zq;
 
