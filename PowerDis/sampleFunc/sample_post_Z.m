@@ -32,7 +32,6 @@ elseif(strcmp(param.infer.symbolMethod,'gibbs'))
 elseif(strcmp(param.infer.symbolMethod,'ffbs'))
     [Sest SeqEst nest] = sample_Z_FFBS(data,samples,hyper,param);
     out = 0;
-    
 % Else, give an error
 else
     error(['Invalid sampling method: ' param.infer.symbolMethod]);
