@@ -1,13 +1,13 @@
 function generate_data(Nt,s2y,T)
-Ts=0.15;
+Ts = 0.1;
 sy2 = s2y;
-Ns=25;
-pathL=1.8;
-W=80;
-s2u=1;
-d0=1;
-Pt=30;
-s2vIni = 0.1;
+Ns = 25;
+pathL = 2;
+W = 80;
+s2u = 1;
+d0 = 1;
+Pt = 30;
+s2vIni = 0.01;
 Gx = [1 0 Ts 0; 0 1 0 Ts; 0 0 1 0; 0 0 0 1];
 Gu = [Ts^2/2 0; 0 Ts^2/2; Ts 0; 0 Ts];
 
@@ -48,4 +48,4 @@ figure,plot(squeeze(state(:,1,:))', squeeze(state(:,2,:))','x')
 hold on, plot(sensors(:,1),sensors(:,2),'o')
 figure,plot((obs(:,:))')
 
-save (['dataTracking_Fran_Nt' num2str(Nt) '_s2y' num2str(s2y) '_T' num2str(T) '.mat']);
+save(['dataTracking_Fran_Nt' num2str(Nt) '_s2y' num2str(s2y) '_T' num2str(T) '.mat']);
