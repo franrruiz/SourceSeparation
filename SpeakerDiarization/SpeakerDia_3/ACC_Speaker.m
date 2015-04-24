@@ -1,8 +1,8 @@
 %function ACC_REDD(H,Q)
 Nd=5;
-T=960;
-Tsubsample=1000;
-BASEDIR1=['PCCdata16kHz_isolated/resultsPGAS/S' num2str(Nd) '_T' num2str(T) '_Tsub' num2str(Tsubsample)];
+T=1354;
+Tsubsample=250;
+BASEDIR1=['PCCdata16kHz_isolated/resultsFFBS_lap/S' num2str(Nd) '_T' num2str(T) '_Tsub' num2str(Tsubsample)];
 load([BASEDIR1 '/Final.mat'],'data','init','samples','samplesAll', 'LLH', 'M_EST');
 
 ACC=zeros(1,2000);
@@ -13,5 +13,5 @@ for it=1:2000
     [ACC(it) cad_ord{it}]= calculaAccuracy(cadenas,devices);
 end
 
-BASEDIR1=['PCCdata16kHz_isolated/resultsPGAS'];
+BASEDIR1=['PCCdata16kHz_isolated/resultsFFBS_lap'];
 save([BASEDIR1 '/ADER_S' num2str(Nd) '_T' num2str(T) '_Tsub' num2str(Tsubsample) '.mat'],'ACC','cad_ord','devices');

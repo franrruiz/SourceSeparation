@@ -1,15 +1,15 @@
 function generate_data(Nt,s2y,T)
-Ts=0.005;
+Ts=0.15;
 Ns=25;
-pathL=1.8;
-W=8;
+pathL=2;
+W=400;
 s2u=1;
 d0=1;
-Pt=0.1;
+Pt=30;
 Gx=[1 0 Ts 0; 0 1 0 Ts; 0 0 1 0; 0 0 0 1];
 Gu= [Ts^2/2 0; 0 Ts^2/2; Ts 0; 0 Ts];
 
-pos=0:2:W;
+pos=0:100:W;
 [a b] = meshgrid(pos);
 sensors=[a(: ) b(:)];
 
