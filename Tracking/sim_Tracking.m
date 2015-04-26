@@ -29,8 +29,13 @@ if(~isdir(BASEDIR1))
 end
 
 load (['dataTracking_Nt' num2str(Nd) '_s2y' num2str(noiseVar) '_T' num2str(T) '.mat']);
-data.s2y=s2y;
+try
+    data.s2y=s2y;
+catch e
+    data.s2y=sy2;
+end
 data.s2u=s2u;
+data.s2vIni=s2vIni;
 data.Ptx= Pt; % Transmitted power in dB
 data.W=W;
 param.d0=d0;
@@ -47,7 +52,7 @@ data.states=state;
 param.bcjr.p1 = 0.95;
 param.bcjr.p2 = 0.05;
 param.pgas.N_PF = 3000;
-param.pgas.N_PG = 10000;
+param.pgas.N_PG = 3000;
 param.pgas.Niter = 1;
 param.pgas.returnNsamples = 1;
 param.pgas.maxM = 40;

@@ -1,4 +1,4 @@
-function [X_PG] = pgas(Y,sensors, Area, Gx, Gu, Ts, d0, pathL, Ptx, s2u,Z,Nt,L,sy2,a,b,N_PF,N_PG,M)
+function [X_PG] = pgas(Y,sensors, Area, Gx, Gu, Ts, d0, pathL, Ptx, s2u,Z,Nt,L,sy2,a,b,N_PF,N_PG,M,s2vIni)
 
 [Nr T] = size(Y);
 
@@ -52,7 +52,7 @@ for m = 1 : M
         if t == 1
             % At time t = 1 we sample the states from the prior at time 1.
             % We know that all transmitters were passive at time 0     [Line 1]   
-            Xt(:,:,:,t)   =  repmat(rand(Nt,N)<An,1,1,4).*cat(3,Area*rand([Nt N 2]), randn([Nt N 2]));
+            Xt(:,:,:,t)   =  repmat(rand(Nt,N)<An,[1,1,4]).*cat(3,Area*rand([Nt N 2]), sqrt(s2vIni)*randn([Nt N 2]));
         
 
             % Note that the particles do not yet have any ancestors that 
@@ -75,9 +75,9 @@ for m = 1 : M
             for itm=1:Nt               
                 aux(itm,:,:)=(Gx*squeeze(Xt(itm,ind,:,t-1))'+ sqrt(s2u)*Gu*randn([2 N]))';                
             end
-            aux2=cat(3,Area*rand([Nt N 2]), randn([Nt N 2]));
-            Xt(:,:,:,t)   =   repmat((Act.*(rand(Nt,N)<Bn)),1,1,4).*aux;
-            Xt(:,:,:,t)   =   Xt(:,:,:,t)+repmat((1-Act).*(rand(Nt,N)<An),1,1,4).*aux2;
+            aux2=cat(3,Area*rand([Nt N 2]), sqrt(s2vIni)*randn([Nt N 2]));
+            Xt(:,:,:,t)   =   repmat((Act.*(rand(Nt,N)<Bn)),[1,1,4]).*aux;
+            Xt(:,:,:,t)   =   Xt(:,:,:,t)+repmat((1-Act).*(rand(Nt,N)<An),[1,1,4]).*aux2;
            
            % Note: if we wish to improve the update rate for complex scenarios
            % we should probably try to improve how we propagate particles from
@@ -114,7 +114,7 @@ for m = 1 : M
                     Xaux=repmat(xc(itm,:,t),N,1)'-Gx*squeeze(X1(itm,:,:))';
                     aux(itm,:)=(-0.5*log(2*pi*s2u)-0.5*(Xaux(3,:)/Ts).^2/s2u)+ (-0.5*log(2*pi*s2u)-0.5*(Xaux(4,:)/Ts).^2/s2u);
                 end
-                aux2=log(1/Area*1/Area)+repmat((-0.5*log(2*pi)-0.5*(xc(:,3,t)).^2)+ (-0.5*log(2*pi)-0.5*(xc(:,4,t)).^2), 1,N);
+                aux2=log(1/Area*1/Area)+repmat((-0.5*log(2*pi*s2vIni)-0.5*(xc(:,3,t)).^2/s2vIni)+ (-0.5*log(2*pi*s2vIni)-0.5*(xc(:,4,t)).^2/s2vIni), 1,N);
                 WZ_mat(((1-Act1).*(1-Act0))==1)=log(A(((1-Act1).*(1-Act0))==1)); 
                 WZ_mat(((1-Act1).*Act0)==1)=log(An(((1-Act1).*Act0)==1))+aux2(((1-Act1).*Act0)==1);
                 WZ_mat((Act1.*Act0)==1)=log(Bn((Act1.*Act0)==1))+aux((Act1.*Act0)==1); 
