@@ -14,7 +14,7 @@ colores = 'rgcbmkyrgcbmky';
 figure;
 for nt=1:size(data.states,1)
     idxNZ = find(squeeze(data.states(nt,1,:))~=0);
-    plot(squeeze(data.states(nt,1,idxNZ))',squeeze(data.states(nt,2,idxNZ))','Color',colores(nt));
+    plot(squeeze(data.states(nt,1,idxNZ))',squeeze(data.states(nt,2,idxNZ))','x','Color',colores(nt));
     hold on;
 end
 plot(data.sensors(:,1),data.sensors(:,2),'bo');
@@ -24,7 +24,7 @@ ylabel('x_2');
 figure;
 for nt=1:size(samples.Z,1)
     idxNZ = find(squeeze(samples.Z(nt,1,:))~=0);
-    plot(squeeze(samples.Z(nt,1,idxNZ))',squeeze(samples.Z(nt,2,idxNZ))','Color',colores(nt));
+    plot(squeeze(samples.Z(nt,1,idxNZ))',squeeze(samples.Z(nt,2,idxNZ))','x','Color',colores(nt));
     hold on;
 end
 plot(data.sensors(:,1),data.sensors(:,2),'bo');

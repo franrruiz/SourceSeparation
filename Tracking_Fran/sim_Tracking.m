@@ -51,8 +51,8 @@ data.states=state;
 %% Configuration parameters for BCJR, PGAS, EP, FFBS and collapsed Gibbs
 param.bcjr.p1 = 0.95;
 param.bcjr.p2 = 0.05;
-param.pgas.N_PF = 3000;
-param.pgas.N_PG = 3000;
+param.pgas.N_PF = 10000;
+param.pgas.N_PG = 10000;
 param.pgas.Niter = 1;
 param.pgas.returnNsamples = 1;
 param.pgas.maxM = 40;

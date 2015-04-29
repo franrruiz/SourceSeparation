@@ -1,5 +1,5 @@
 function generate_data(Nt,s2y,T)
-Ts = 0.1;
+Ts = 0.2;
 sy2 = s2y;
 Ns = 25;
 pathL = 2;
