@@ -1,5 +1,5 @@
 function generate_data(Nt,s2y,T)
-Ts = 0.5;
+Ts = 0.4;
 sy2 = s2y;
 Ns = 25;
 pathL = 2;
@@ -17,8 +17,8 @@ sensors = [a(:) b(:)];
 
 state=zeros(Nt,4,T);
 for nt=1:Nt
-    Tini = randi([1 round(T/2)],1,1);
-    Tend = min(Tini+round(T/2)-1,T);
+    Tini = 1;%randi([1 round(T/2)],1,1);
+    Tend = T;%min(Tini+round(T/2)-1,T);
     state(nt,:,Tini)= [W*rand(2,1); sqrt(s2vIni)*randn(2,1)];
     flagTxDone = 0;
     while(~flagTxDone)

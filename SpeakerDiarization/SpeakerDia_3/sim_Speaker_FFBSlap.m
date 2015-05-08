@@ -1,4 +1,4 @@
-function sim_Speaker(noiseVar,Tsubsample,Nd,D,Niter,LastIt)
+function sim_Speaker_FFBSlap(Tsubsample,Nd,D,Niter,LastIt)
 
 addpath(genpath('sampleFunc/'));
 addpath(genpath('auxFunc/'));
@@ -22,19 +22,12 @@ param.storeIters = 2000;
 param.Q=1;
 %param.constellation=1:Q;
 
-%% Load data
-load('PCCdata16kHz_isolated/data/data3.mat','speakers');
-data.speakers = 1e2*squeeze(speakers(1:Tsubsample:end,1,1:param.Nd));
+load('PCCdata16kHz_isolated/data/dataF4.mat','speakers','obs','W','s2y');
+data.speakers = (speakers(1:Tsubsample:end,1:param.Nd));
 [param.T aux1 aux2]=size(data.speakers);
-data.W=rand(param.Nd,param.D);
-data.s2y=noiseVar;
-data.obs = (data.speakers*data.W)';
-% Normalize
-% muo=mean(data.obs');
-% stdo=std(data.obs');
-% data.obs=(data.obs-repmat(muo',1,param.T))./repmat(stdo',1,param.T);
-% adding noise
-data.obs =data.obs +sqrt(data.s2y)*randn(param.D,param.T);
+data.W=W;
+data.s2y=s2y;
+data.obs = obs(:,1:Tsubsample:end);
 
 BASEDIR1=['PCCdata16kHz_isolated/resultsFFBS_lap/S' num2str(param.Nd) '_T' num2str(param.T) '_Tsub' num2str(Tsubsample)];
 if(~isdir(BASEDIR1))
