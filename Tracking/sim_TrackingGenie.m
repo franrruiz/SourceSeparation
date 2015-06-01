@@ -35,8 +35,8 @@ param.d0 = 100;
 param.pathL = 2;
 
 %% Configuration parameters for BCJR, PGAS, EP, FFBS and collapsed Gibbs
-param.bcjr.p1 = round((0.5*T-1)/(0.5*T));
-param.bcjr.p2 = round(1/(0.5*T));
+param.bcjr.p1 = ((0.5*T-1)/(0.5*T));
+param.bcjr.p2 = (1/(0.5*T));
 param.pgas.N_PF = 3000;
 param.pgas.N_PG = 3000;
 param.pgas.Niter = 1;
@@ -68,8 +68,8 @@ hyper.nu = 1;       % Parameter for s2y ~ IG(tau,nu)
 %% Initialization
 if(~flagRecovered)
     init.s2y = data.s2y;
-    init.am = round((0.5*T-1)/(0.5*T))*ones(param.bnp.Mini,1);
-    init.bm = round(1/(0.5*T))*ones(param.bnp.Mini,1);
+    init.am = ((0.5*T-1)/(0.5*T))*ones(param.bnp.Mini,1);
+    init.bm = (1/(0.5*T))*ones(param.bnp.Mini,1);
     init.Z = zeros(param.bnp.Mini,4,param.T);
     init.nest = zeros(2,2,param.bnp.Mini);
     init.nest(1,1,:) = param.T;
