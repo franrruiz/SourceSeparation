@@ -33,6 +33,7 @@ load('Final.mat','data');
 param.Ts = data.Gx(1,3);
 param.d0 = 100;
 param.pathL = 2;
+data.Ptx = 10;
 
 %% Configuration parameters for BCJR, PGAS, EP, FFBS and collapsed Gibbs
 param.bcjr.p1 = ((0.5*T-1)/(0.5*T));
